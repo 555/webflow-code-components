@@ -1,5 +1,6 @@
 import './App.css';
 import { BarChart } from './components/BarChart/BarChart';
+import { HorizontalBarChart } from './components/HorizontalBarChart/HorizontalBarChart';
 
 const sampleData = JSON.stringify(
   [
@@ -10,6 +11,16 @@ const sampleData = JSON.stringify(
     { name: 'Page E', value1: 1890, value2: 4800 },
     { name: 'Page F', value1: 2390, value2: 3800 },
     { name: 'Page G', value1: 3490, value2: 4300 },
+  ],
+  null,
+  2
+);
+
+const horizontalData = JSON.stringify(
+  [
+    { label: '2022', value: 14.8 },
+    { label: '2023', value: 16.5 },
+    { label: '2024', value: 17.5 },
   ],
   null,
   2
@@ -76,6 +87,35 @@ function App() {
               marginBottom={5}
               marginLeft={0}
               yAxisWidth={60}
+            />
+          </div>
+        </section>
+
+        <section style={{ marginBottom: '60px' }}>
+          <h2 style={{ marginBottom: '20px', color: '#fff' }}>Horizontal Bar Chart Component</h2>
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px' }}>
+            <HorizontalBarChart
+              data={horizontalData}
+              labelKey="label"
+              valueKey="value"
+              baseColor="#ff007a"
+              showGrid={true}
+              showXAxis={true}
+              showYAxis={true}
+              showLabels={true}
+              minValue={0}
+              maxValue={20}
+              valueFormat="percent"
+              height={160}
+              barCategoryGap={4}
+              marginTop={20}
+              marginRight={50}
+              marginBottom={10}
+              marginLeft={30}
+              barRadius={8}
+              labelFontWeight={600}
+              labelColor="#000000"
+              yAxisWidth={50}
             />
           </div>
         </section>

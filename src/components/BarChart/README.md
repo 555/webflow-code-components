@@ -4,11 +4,12 @@ A fully customizable bar chart component powered by Recharts, designed for Webfl
 
 ## Features
 
-- **Responsive Design**: Automatically adapts to container width with configurable aspect ratios
+- **Responsive Design**: Automatically fills parent width with configurable height
 - **Dual Bar Support**: Display up to two data series with independent styling
+- **Interactive Hover Effect**: Bars darken by 3% on hover for subtle feedback
 - **Font Inheritance**: Inherits typography from your Webflow site for seamless integration
 - **Interactive Tooltips**: Hover to view detailed data points
-- **Customizable Colors**: Configure bar colors and hover states via Webflow props
+- **Customizable Colors**: Configure bar colors via Webflow props
 - **Toggle Features**: Show/hide grid, axes, tooltip, and legend
 - **Flexible Data**: Accepts JSON data with customizable key mappings
 - **Rounded Corners**: Adjustable bar corner radius for modern aesthetics
@@ -40,17 +41,13 @@ A fully customizable bar chart component powered by Recharts, designed for Webfl
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| Bar 1 Color | Text | `"#8884d8"` | Fill color for first bar series |
-| Bar 1 Hover Color | Text | `"#6366f1"` | Fill color on hover |
-| Bar 1 Hover Stroke | Text | `"#4f46e5"` | Stroke color on hover |
+| Bar 1 Color | Text | `"#8884d8"` | Fill color for first bar series (darkens by 3% on hover) |
 
 ### Bar 2 Styling
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| Bar 2 Color | Text | `"#82ca9d"` | Fill color for second bar series |
-| Bar 2 Hover Color | Text | `"#10b981"` | Fill color on hover |
-| Bar 2 Hover Stroke | Text | `"#059669"` | Stroke color on hover |
+| Bar 2 Color | Text | `"#82ca9d"` | Fill color for second bar series (darkens by 3% on hover) |
 
 ### Bar Styling
 
@@ -62,18 +59,7 @@ A fully customizable bar chart component powered by Recharts, designed for Webfl
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| Max Width | Text | `"700px"` | Maximum chart width (CSS value) |
-| Max Height | Text | `"70vh"` | Maximum chart height (CSS value) |
-| Aspect Ratio | Number | `1.618` | Width-to-height ratio (0.5-3.0) |
-
-### Margins
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| Margin Top | Number | `5` | Top margin (0-100px) |
-| Margin Right | Number | `0` | Right margin (0-100px) |
-| Margin Bottom | Number | `5` | Bottom margin (0-100px) |
-| Margin Left | Number | `0` | Left margin (0-100px) |
+| Chart Height | Number | `400` | Height of the chart in pixels (200-1000px) |
 
 ## Usage
 
@@ -138,10 +124,10 @@ You can customize the error state appearance using these CSS variables in your W
 ### Responsive Behavior
 
 The chart automatically:
-- Adjusts to container width (100%)
-- Maintains specified aspect ratio
-- Respects max-width and max-height constraints
+- Fills 100% of parent container width
+- Uses fixed height (configurable via "Chart Height" prop)
 - Scales text and elements proportionally
+- Adapts to different screen sizes while maintaining readability
 
 ## Technical Notes
 
@@ -167,7 +153,7 @@ X-Axis Key: "category"
 Bar 1 Data Key: "thisYear"
 Bar 2 Data Key: "lastYear"
 Show Legend: true
-Aspect Ratio: 2.0 (wider chart)
+Chart Height: 500
 ```
 
 ### Minimal Chart

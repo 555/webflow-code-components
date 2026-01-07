@@ -87,19 +87,7 @@ export default declareComponent(BarChart, {
       name: 'Bar 1 Color',
       defaultValue: '#8884d8',
       group: 'Bar 1 Styling',
-      tooltip: 'Color for the first bar (hex, rgb, or color name)',
-    }),
-    bar1ActiveFill: props.Text({
-      name: 'Bar 1 Hover Color',
-      defaultValue: '#6366f1',
-      group: 'Bar 1 Styling',
-      tooltip: 'Fill color when hovering over the first bar',
-    }),
-    bar1ActiveStroke: props.Text({
-      name: 'Bar 1 Hover Stroke',
-      defaultValue: '#4f46e5',
-      group: 'Bar 1 Styling',
-      tooltip: 'Stroke color when hovering over the first bar',
+      tooltip: 'Color for the first bar (hex, rgb, or color name). Darkens by 3% on hover.',
     }),
 
     // Bar 2 Styling
@@ -107,19 +95,7 @@ export default declareComponent(BarChart, {
       name: 'Bar 2 Color',
       defaultValue: '#82ca9d',
       group: 'Bar 2 Styling',
-      tooltip: 'Color for the second bar (hex, rgb, or color name)',
-    }),
-    bar2ActiveFill: props.Text({
-      name: 'Bar 2 Hover Color',
-      defaultValue: '#10b981',
-      group: 'Bar 2 Styling',
-      tooltip: 'Fill color when hovering over the second bar',
-    }),
-    bar2ActiveStroke: props.Text({
-      name: 'Bar 2 Hover Stroke',
-      defaultValue: '#059669',
-      group: 'Bar 2 Styling',
-      tooltip: 'Stroke color when hovering over the second bar',
+      tooltip: 'Color for the second bar (hex, rgb, or color name). Darkens by 3% on hover.',
     }),
 
     // Bar Shape
@@ -134,59 +110,13 @@ export default declareComponent(BarChart, {
     }),
 
     // Dimensions
-    maxWidth: props.Text({
-      name: 'Max Width',
-      defaultValue: '700px',
+    height: props.Number({
+      name: 'Chart Height',
+      defaultValue: 400,
       group: 'Dimensions',
-      tooltip: 'Maximum width of the chart (CSS value like "700px" or "100%")',
-    }),
-    maxHeight: props.Text({
-      name: 'Max Height',
-      defaultValue: '70vh',
-      group: 'Dimensions',
-      tooltip: 'Maximum height of the chart (CSS value like "500px" or "70vh")',
-    }),
-    aspectRatio: props.Number({
-      name: 'Aspect Ratio',
-      defaultValue: 1.618,
-      group: 'Dimensions',
-      tooltip: 'Width to height ratio (1.618 is golden ratio, 2 is 2:1, etc.)',
-      min: 0.5,
-      max: 3,
-      decimals: 3,
-    }),
-
-    // Margins
-    marginTop: props.Number({
-      name: 'Margin Top',
-      defaultValue: 5,
-      group: 'Margins',
-      min: 0,
-      max: 100,
-      decimals: 0,
-    }),
-    marginRight: props.Number({
-      name: 'Margin Right',
-      defaultValue: 0,
-      group: 'Margins',
-      min: 0,
-      max: 100,
-      decimals: 0,
-    }),
-    marginBottom: props.Number({
-      name: 'Margin Bottom',
-      defaultValue: 5,
-      group: 'Margins',
-      min: 0,
-      max: 100,
-      decimals: 0,
-    }),
-    marginLeft: props.Number({
-      name: 'Margin Left',
-      defaultValue: 0,
-      group: 'Margins',
-      min: 0,
-      max: 100,
+      tooltip: 'Height of the chart in pixels',
+      min: 200,
+      max: 1000,
       decimals: 0,
     }),
 

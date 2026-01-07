@@ -19,13 +19,9 @@ export interface BarChartProps {
 
   // Bar 1 Colors
   bar1Fill?: string;
-  bar1ActiveFill?: string;
-  bar1ActiveStroke?: string;
 
   // Bar 2 Colors
   bar2Fill?: string;
-  bar2ActiveFill?: string;
-  bar2ActiveStroke?: string;
 
   // Bar Styling
   barRadius?: number;
@@ -41,15 +37,7 @@ export interface BarChartProps {
   gridStrokeDasharray?: string;
 
   // Dimensions
-  maxWidth?: string;
-  maxHeight?: string;
-  aspectRatio?: number;
-
-  // Margins
-  marginTop?: number;
-  marginRight?: number;
-  marginBottom?: number;
-  marginLeft?: number;
+  height?: number;
 
   // Axis width
   yAxisWidth?: number;
@@ -61,11 +49,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   bar1Key = 'value1',
   bar2Key = 'value2',
   bar1Fill = '#8884d8',
-  bar1ActiveFill = '#6366f1',
-  bar1ActiveStroke = '#4f46e5',
   bar2Fill = '#82ca9d',
-  bar2ActiveFill = '#10b981',
-  bar2ActiveStroke = '#059669',
   barRadius = 10,
   showCartesianGrid = true,
   showXAxis = true,
@@ -73,13 +57,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   showTooltip = true,
   showLegend = true,
   gridStrokeDasharray = '3 3',
-  maxWidth = '700px',
-  maxHeight = '70vh',
-  aspectRatio = 1.618,
-  marginTop = 5,
-  marginRight = 0,
-  marginBottom = 5,
-  marginLeft = 0,
+  height = 400,
   yAxisWidth = 60,
 }) => {
   // Parse JSON data
@@ -120,19 +98,15 @@ export const BarChart: React.FC<BarChartProps> = ({
   const hasBar2 = parsedData.some((item: any) => item.hasOwnProperty(bar2Key));
 
   return (
-    <div style={{ maxWidth, maxHeight, width: '100%' }}>
-      <ResponsiveContainer
-        width="100%"
-        aspect={aspectRatio}
-        className="bar-chart-container"
-      >
+    <div style={{ width: '100%', height }} className="bar-chart-container">
+      <ResponsiveContainer>
         <RechartsBarChart
           data={parsedData}
           margin={{
-            top: marginTop,
-            right: marginRight,
-            left: marginLeft,
-            bottom: marginBottom,
+            top: 0,
+            right: 8,
+            left: 8,
+            bottom: 0,
           }}
           style={{
             fontFamily: 'inherit',
@@ -141,7 +115,7 @@ export const BarChart: React.FC<BarChartProps> = ({
         {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} />}
         {showXAxis && <XAxis dataKey={xAxisKey} style={{ fontFamily: 'inherit' }} />}
         {showYAxis && <YAxis width={yAxisWidth} style={{ fontFamily: 'inherit' }} />}
-        {showTooltip && <Tooltip contentStyle={{ fontFamily: 'inherit' }} />}
+        {showTooltip && <Tooltip cursor={{ fill: 'rgba(0,0,0,0.1)' }} contentStyle={{ fontFamily: 'inherit' }} />}
         {showLegend && <Legend wrapperStyle={{ fontFamily: 'inherit' }} />}
 
         {hasBar1 && (
@@ -149,8 +123,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             dataKey={bar1Key}
             fill={bar1Fill}
             activeBar={{
-              fill: bar1ActiveFill,
-              stroke: bar1ActiveStroke,
+              filter: 'brightness(0.97)',
             }}
             radius={[barRadius, barRadius, 0, 0]}
           />
@@ -161,8 +134,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             dataKey={bar2Key}
             fill={bar2Fill}
             activeBar={{
-              fill: bar2ActiveFill,
-              stroke: bar2ActiveStroke,
+              filter: 'brightness(0.97)',
             }}
             radius={[barRadius, barRadius, 0, 0]}
           />
