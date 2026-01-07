@@ -197,7 +197,7 @@ const Particles: React.FC<ParticlesProps> = ({
     const colors = new Float32Array(count * 3);
 
     // Build palette from individual color props, filtering out undefined values
-    const palette = [color1, color2, color3, color4].filter(Boolean);
+    const palette = [color1, color2, color3, color4].filter((c): c is string => Boolean(c));
     // Fall back to default colors if no colors are provided
     const finalPalette = palette.length > 0 ? palette : defaultColors;
 

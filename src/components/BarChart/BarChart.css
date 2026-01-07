@@ -1,0 +1,60 @@
+/* Bar Chart Component Styles */
+
+/* Ensure fonts inherit from the Webflow site */
+.bar-chart-container {
+  font-family: inherit;
+  width: 100%;
+}
+
+/* Error state styling */
+.bar-chart-error {
+  font-family: inherit;
+  padding: 2rem;
+  border: 2px dashed var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  background-color: var(--error-background, #fef2f2);
+  color: var(--error-text, #991b1b);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.bar-chart-error p {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.bar-chart-error details {
+  margin-top: 1rem;
+}
+
+.bar-chart-error summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--error-text-secondary, #7f1d1d);
+  margin-bottom: 0.5rem;
+}
+
+.bar-chart-error summary:hover {
+  text-decoration: underline;
+}
+
+.bar-chart-error pre {
+  background-color: var(--code-background, #fff);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
+  color: var(--code-text, #1f2937);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Recharts override to ensure font inheritance */
+.recharts-surface,
+.recharts-text,
+.recharts-cartesian-axis-tick-value,
+.recharts-legend-wrapper,
+.recharts-tooltip-wrapper {
+  font-family: inherit !important;
+}

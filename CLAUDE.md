@@ -87,7 +87,9 @@ Use `@webflow/data-types` for Webflow prop declarations:
 - `tooltip` - Help text shown in Designer
 - `min`/`max`/`decimals` - For Number type
 
-**Important**: Props from Webflow may arrive as strings - parse them in the wrapper component (see FAQ.webflow.tsx for example).
+**Important**:
+- Props from Webflow may arrive as strings - parse them in the wrapper component (see FAQ.webflow.tsx for example).
+- **For JSON data inputs, always use `props.Text()`, NOT `props.RichText()`** - Webflow's RichText fields do not properly accept JSON/code strings. Use Text fields for any data that needs to be parsed as JSON, code, or structured data.
 
 ## Component Categories
 
