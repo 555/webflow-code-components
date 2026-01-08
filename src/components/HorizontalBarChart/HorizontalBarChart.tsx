@@ -45,10 +45,6 @@ export interface HorizontalBarChartProps {
   // Bar Styling
   barRadius?: number;
 
-  // Label Styling
-  labelFontWeight?: number;
-  labelColor?: string;
-
   // Axis Styling
   yAxisWidth?: number;
 }
@@ -66,14 +62,12 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   enableAnimation = true,
   gridStrokeColor = '#e6e6e6',
   valueFormat = 'number',
-  currencySymbol = '$',
+  currencySymbol = '£',
   minValue,
   maxValue,
   height = 160,
   barCategoryGap = 4,
   barRadius = 8,
-  labelFontWeight = 600,
-  labelColor = '#000000',
   yAxisWidth = 50,
 }) => {
   // Parse JSON data
@@ -232,7 +226,7 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
               tickFormatter={formatValue}
               axisLine={false}
               tickLine={false}
-              style={{ fontFamily: 'inherit', fontSize: 12 }}
+              style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
             />
           )}
 
@@ -252,7 +246,7 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
             tickLine={false}
             width={showYAxis ? yAxisWidth : 0}
             tick={showYAxis}
-            style={{ fontFamily: 'inherit', fontSize: 12 }}
+            style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
           />
 
           {showTooltip && (
@@ -279,7 +273,7 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
                 dataKey={valueKey}
                 position="right"
                 formatter={formatValue}
-                style={{ fill: labelColor, fontWeight: labelFontWeight, fontFamily: 'inherit', fontSize: 14 }}
+                style={{ fill: 'inherit', fontWeight: 600, fontFamily: 'inherit', fontSize: 14 }}
               />
             )}
             {dataWithOpacity.map((entry, index) => (

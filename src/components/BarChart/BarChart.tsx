@@ -60,7 +60,7 @@ export const BarChart: React.FC<BarChartProps> = ({
   showLegend = true,
   enableAnimation = true,
   valueFormat = 'number',
-  currencySymbol = '$',
+  currencySymbol = '£',
   gridStrokeDasharray = '3 3',
   height = 400,
   yAxisWidth = 60,
@@ -206,11 +206,11 @@ export const BarChart: React.FC<BarChartProps> = ({
           }}
         >
         {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} />}
-        {showXAxis && <XAxis dataKey={xAxisKey} style={{ fontFamily: 'inherit' }} />}
+        {showXAxis && <XAxis dataKey={xAxisKey} style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }} />}
         {showYAxis && (
           <YAxis
             width={yAxisWidth}
-            style={{ fontFamily: 'inherit' }}
+            style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
             tickFormatter={formatValue}
           />
         )}
@@ -221,7 +221,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             formatter={(value: any) => formatValue(Number(value))}
           />
         )}
-        {showLegend && <Legend wrapperStyle={{ fontFamily: 'inherit' }} />}
+        {showLegend && <Legend wrapperStyle={{ fontFamily: 'inherit', fill: 'inherit' }} />}
 
         {chartType === 'stacked' ? (
           // Stacked mode: render a Bar for each value key

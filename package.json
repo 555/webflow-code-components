@@ -19,7 +19,11 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "publish": "npm run publish:limeknight",
+    "publish:limeknight": "cp .env.limeknight .env && npm run build && echo 'Y' | npx webflow library share --no-input",
+    "publish:studiotonic": "cp .env.studiotonic .env && npm run build && echo 'Y' | npx webflow library share --no-input",
+    "publish:both": "npm run publish:limeknight && npm run publish:studiotonic"
   },
   "eslintConfig": {
     "extends": [

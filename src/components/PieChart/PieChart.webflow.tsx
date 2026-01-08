@@ -96,9 +96,9 @@ export default declareComponent(PieChart, {
     }),
     currencySymbol: props.Text({
       name: 'Currency Symbol',
-      defaultValue: '$',
+      defaultValue: '£',
       group: 'Value Formatting',
-      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "$", "€", "£")',
+      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "£", "$", "€")',
     }),
 
     // Pie Styling

@@ -98,9 +98,9 @@ export default declareComponent(HorizontalBarChart, {
     }),
     currencySymbol: props.Text({
       name: 'Currency Symbol',
-      defaultValue: '$',
+      defaultValue: '£',
       group: 'Value Formatting',
-      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "$", "€", "£")',
+      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "£", "$", "€")',
     }),
 
     // Value Configuration
@@ -146,23 +146,6 @@ export default declareComponent(HorizontalBarChart, {
       min: 0,
       max: 50,
       decimals: 0,
-    }),
-
-    // Label Styling
-    labelFontWeight: props.Number({
-      name: 'Label Font Weight',
-      defaultValue: 600,
-      group: 'Label Styling',
-      tooltip: 'Font weight for value labels (100-900)',
-      min: 100,
-      max: 900,
-      decimals: 0,
-    }),
-    labelColor: props.Text({
-      name: 'Label Color',
-      defaultValue: '#000000',
-      group: 'Label Styling',
-      tooltip: 'Color for value labels (hex, rgb, or color name)',
     }),
 
     // Axis Configuration

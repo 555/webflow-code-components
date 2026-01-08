@@ -82,7 +82,6 @@ function App() {
               showLegend={true}
               enableAnimation={true}
               valueFormat="number"
-              currencySymbol="$"
               gridStrokeDasharray="3 3"
               height={400}
               yAxisWidth={60}
@@ -105,12 +104,9 @@ function App() {
               showTooltip={true}
               enableAnimation={true}
               valueFormat="percent"
-              currencySymbol="$"
               height={160}
               barCategoryGap={4}
               barRadius={8}
-              labelFontWeight={600}
-              labelColor="#000000"
               yAxisWidth={50}
               gridStrokeColor="#e6e6e6"
             />
@@ -132,7 +128,6 @@ function App() {
               showLegend={true}
               enableAnimation={true}
               valueFormat="number"
-              currencySymbol="$"
               innerRadius={60}
               paddingAngle={2}
               height={400}
