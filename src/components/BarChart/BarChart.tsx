@@ -32,6 +32,11 @@ export interface BarChartProps {
   showYAxis?: boolean;
   showTooltip?: boolean;
   showLegend?: boolean;
+  enableAnimation?: boolean;
+
+  // Value Formatting
+  valueFormat?: string; // "number" | "percent" | "currency"
+  currencySymbol?: string;
 
   // Grid Styling
   gridStrokeDasharray?: string;
@@ -56,10 +61,39 @@ export const BarChart: React.FC<BarChartProps> = ({
   showYAxis = true,
   showTooltip = true,
   showLegend = true,
+  enableAnimation = true,
+  valueFormat = 'number',
+  currencySymbol = '$',
   gridStrokeDasharray = '3 3',
   height = 400,
   yAxisWidth = 60,
 }) => {
+  // Format value based on format type
+  const formatValue = (value: number): string => {
+    const numValue = Number(value);
+    const absValue = Math.abs(numValue);
+
+    if (valueFormat === 'percent') {
+      // Percentage format - no K/M suffix
+      return `${numValue}%`;
+    } else if (valueFormat === 'currency') {
+      // Currency format with K/M suffix
+      if (absValue >= 1000000) {
+        return `${currencySymbol}${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${currencySymbol}${(numValue / 1000).toFixed(1)}K`;
+      }
+      return `${currencySymbol}${numValue}`;
+    } else {
+      // Number format with K/M suffix
+      if (absValue >= 1000000) {
+        return `${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${(numValue / 1000).toFixed(1)}K`;
+      }
+      return numValue.toString();
+    }
+  };
   // Parse JSON data
   const parsedData = useMemo(() => {
     try {
@@ -114,8 +148,20 @@ export const BarChart: React.FC<BarChartProps> = ({
         >
         {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} />}
         {showXAxis && <XAxis dataKey={xAxisKey} style={{ fontFamily: 'inherit' }} />}
-        {showYAxis && <YAxis width={yAxisWidth} style={{ fontFamily: 'inherit' }} />}
-        {showTooltip && <Tooltip cursor={{ fill: 'rgba(0,0,0,0.1)' }} contentStyle={{ fontFamily: 'inherit' }} />}
+        {showYAxis && (
+          <YAxis
+            width={yAxisWidth}
+            style={{ fontFamily: 'inherit' }}
+            tickFormatter={formatValue}
+          />
+        )}
+        {showTooltip && (
+          <Tooltip
+            cursor={{ fill: 'rgba(0,0,0,0.1)' }}
+            contentStyle={{ fontFamily: 'inherit' }}
+            formatter={(value: any) => formatValue(Number(value))}
+          />
+        )}
         {showLegend && <Legend wrapperStyle={{ fontFamily: 'inherit' }} />}
 
         {hasBar1 && (
@@ -126,6 +172,7 @@ export const BarChart: React.FC<BarChartProps> = ({
               filter: 'brightness(0.97)',
             }}
             radius={[barRadius, barRadius, 0, 0]}
+            isAnimationActive={enableAnimation}
           />
         )}
 
@@ -137,6 +184,7 @@ export const BarChart: React.FC<BarChartProps> = ({
               filter: 'brightness(0.97)',
             }}
             radius={[barRadius, barRadius, 0, 0]}
+            isAnimationActive={enableAnimation}
           />
         )}
       </RechartsBarChart>

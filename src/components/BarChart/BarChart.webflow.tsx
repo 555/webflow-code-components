@@ -75,11 +75,32 @@ export default declareComponent(BarChart, {
       defaultValue: true,
       group: 'Chart Features',
     }),
+    enableAnimation: props.Boolean({
+      name: 'Enable Animation',
+      defaultValue: true,
+      group: 'Chart Features',
+      tooltip: 'Enable or disable chart animations',
+    }),
     gridStrokeDasharray: props.Text({
       name: 'Grid Pattern',
       defaultValue: '3 3',
       group: 'Chart Features',
       tooltip: 'CSS stroke-dasharray for grid lines (e.g., "3 3" for dashed)',
+    }),
+
+    // Value Formatting
+    valueFormat: props.Variant({
+      name: 'Value Format',
+      defaultValue: 'number',
+      group: 'Value Formatting',
+      options: ['number', 'percent', 'currency'],
+      tooltip: 'Format values as numbers (with K/M suffix), percentages (%), or currency (with symbol and K/M suffix)',
+    }),
+    currencySymbol: props.Text({
+      name: 'Currency Symbol',
+      defaultValue: '$',
+      group: 'Value Formatting',
+      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "$", "€", "£")',
     }),
 
     // Bar 1 Styling

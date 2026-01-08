@@ -26,12 +26,16 @@ export interface HorizontalBarChartProps {
   showYAxis?: boolean;
   showLabels?: boolean;
   showTooltip?: boolean;
+  enableAnimation?: boolean;
   gridStrokeColor?: string;
+
+  // Value Formatting
+  valueFormat?: string; // "number" | "percent" | "currency"
+  currencySymbol?: string;
 
   // Axis Configuration
   minValue?: number;
   maxValue?: number;
-  valueFormat?: string; // "percent" or "number"
 
   // Dimensions
   height?: number;
@@ -58,10 +62,12 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   showYAxis = true,
   showLabels = true,
   showTooltip = true,
+  enableAnimation = true,
   gridStrokeColor = '#e6e6e6',
+  valueFormat = 'number',
+  currencySymbol = '$',
   minValue = 0,
   maxValue = 20,
-  valueFormat = 'percent',
   height = 160,
   barCategoryGap = 4,
   barRadius = 8,
@@ -129,7 +135,30 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
 
   const formatValue = (value: any) => {
     if (value === null || value === undefined) return '';
-    return valueFormat === 'percent' ? `${value}%` : value.toString();
+
+    const numValue = Number(value);
+    const absValue = Math.abs(numValue);
+
+    if (valueFormat === 'percent') {
+      // Percentage format - no K/M suffix
+      return `${numValue}%`;
+    } else if (valueFormat === 'currency') {
+      // Currency format with K/M suffix
+      if (absValue >= 1000000) {
+        return `${currencySymbol}${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${currencySymbol}${(numValue / 1000).toFixed(1)}K`;
+      }
+      return `${currencySymbol}${numValue}`;
+    } else {
+      // Number format with K/M suffix
+      if (absValue >= 1000000) {
+        return `${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${(numValue / 1000).toFixed(1)}K`;
+      }
+      return numValue.toString();
+    }
   };
 
   // Custom tooltip formatter - returns [formattedValue, name] where name is empty to hide "Value:"
@@ -190,7 +219,7 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
           <Bar
             dataKey={valueKey}
             radius={[0, barRadius, barRadius, 0]}
-            isAnimationActive={false}
+            isAnimationActive={enableAnimation}
             activeBar={{
               filter: 'brightness(0.97)',
             }}

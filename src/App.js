@@ -1,6 +1,7 @@
 import './App.css';
 import { BarChart } from './components/BarChart/BarChart';
 import { HorizontalBarChart } from './components/HorizontalBarChart/HorizontalBarChart';
+import { PieChart } from './components/PieChart/PieChart';
 
 const sampleData = JSON.stringify(
   [
@@ -21,6 +22,17 @@ const horizontalData = JSON.stringify(
     { label: '2022', value: 14.8 },
     { label: '2023', value: 16.5 },
     { label: '2024', value: 17.5 },
+  ],
+  null,
+  2
+);
+
+const pieData = JSON.stringify(
+  [
+    { name: 'Combustibles', value: 9094 },
+    { name: 'Traditional Oral', value: 1058 },
+    { name: 'New Categories', value: 1078 },
+    { name: 'Other', value: 48 },
   ],
   null,
   2
@@ -67,25 +79,18 @@ function App() {
               bar1Key="value1"
               bar2Key="value2"
               bar1Fill="#8884d8"
-              bar1ActiveFill="#6366f1"
-              bar1ActiveStroke="#4f46e5"
               bar2Fill="#82ca9d"
-              bar2ActiveFill="#10b981"
-              bar2ActiveStroke="#059669"
               barRadius={10}
               showCartesianGrid={true}
               showXAxis={true}
               showYAxis={true}
               showTooltip={true}
               showLegend={true}
+              enableAnimation={true}
+              valueFormat="currency"
+              currencySymbol="$"
               gridStrokeDasharray="3 3"
-              maxWidth="700px"
-              maxHeight="70vh"
-              aspectRatio={1.618}
-              marginTop={5}
-              marginRight={0}
-              marginBottom={5}
-              marginLeft={0}
+              height={400}
               yAxisWidth={60}
             />
           </div>
@@ -103,19 +108,42 @@ function App() {
               showXAxis={true}
               showYAxis={true}
               showLabels={true}
+              showTooltip={true}
+              enableAnimation={true}
+              valueFormat="percent"
+              currencySymbol="$"
               minValue={0}
               maxValue={20}
-              valueFormat="percent"
               height={160}
               barCategoryGap={4}
-              marginTop={20}
-              marginRight={50}
-              marginBottom={10}
-              marginLeft={30}
               barRadius={8}
               labelFontWeight={600}
               labelColor="#000000"
               yAxisWidth={50}
+              gridStrokeColor="#e6e6e6"
+            />
+          </div>
+        </section>
+
+        <section style={{ marginBottom: '60px' }}>
+          <h2 style={{ marginBottom: '20px', color: '#fff' }}>Pie Chart Component</h2>
+          <div style={{ background: '#fff', padding: '20px', borderRadius: '8px' }}>
+            <PieChart
+              data={pieData}
+              nameKey="name"
+              valueKey="value"
+              color1="#ff6b35"
+              color2="#004e89"
+              color3="#1a8fe3"
+              color4="#b8b8b8"
+              showTooltip={true}
+              showLegend={true}
+              enableAnimation={true}
+              valueFormat="number"
+              currencySymbol="$"
+              innerRadius={60}
+              paddingAngle={2}
+              height={400}
             />
           </div>
         </section>

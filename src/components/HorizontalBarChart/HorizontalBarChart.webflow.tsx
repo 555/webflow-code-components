@@ -81,6 +81,27 @@ export default declareComponent(HorizontalBarChart, {
       group: 'Chart Features',
       tooltip: 'Show interactive tooltip on hover',
     }),
+    enableAnimation: props.Boolean({
+      name: 'Enable Animation',
+      defaultValue: true,
+      group: 'Chart Features',
+      tooltip: 'Enable or disable chart animations',
+    }),
+
+    // Value Formatting
+    valueFormat: props.Variant({
+      name: 'Value Format',
+      defaultValue: 'number',
+      group: 'Value Formatting',
+      options: ['number', 'percent', 'currency'],
+      tooltip: 'Format values as numbers (with K/M suffix), percentages (%), or currency (with symbol and K/M suffix)',
+    }),
+    currencySymbol: props.Text({
+      name: 'Currency Symbol',
+      defaultValue: '$',
+      group: 'Value Formatting',
+      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "$", "€", "£")',
+    }),
 
     // Value Configuration
     minValue: props.Number({
@@ -100,13 +121,6 @@ export default declareComponent(HorizontalBarChart, {
       min: 1,
       max: 1000,
       decimals: 0,
-    }),
-    valueFormat: props.Variant({
-      name: 'Value Format',
-      defaultValue: 'percent',
-      group: 'Value Range',
-      options: ['percent', 'number'],
-      tooltip: 'Display values as percentages (percent) or plain numbers (number)',
     }),
 
     // Dimensions
