@@ -8,20 +8,19 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  Cell,
 } from 'recharts';
 
 export interface BarChartProps {
   // Data
   data: string;
   xAxisKey?: string;
-  bar1Key?: string;
-  bar2Key?: string;
 
-  // Bar 1 Colors
-  bar1Fill?: string;
+  // Chart Configuration
+  chartType?: string; // "column" | "stacked"
 
-  // Bar 2 Colors
-  bar2Fill?: string;
+  // Color
+  baseColor?: string;
 
   // Bar Styling
   barRadius?: number;
@@ -51,10 +50,8 @@ export interface BarChartProps {
 export const BarChart: React.FC<BarChartProps> = ({
   data,
   xAxisKey = 'name',
-  bar1Key = 'value1',
-  bar2Key = 'value2',
-  bar1Fill = '#8884d8',
-  bar2Fill = '#82ca9d',
+  chartType = 'column',
+  baseColor = '#00a0dc',
   barRadius = 10,
   showCartesianGrid = true,
   showXAxis = true,
@@ -97,12 +94,78 @@ export const BarChart: React.FC<BarChartProps> = ({
   // Parse JSON data
   const parsedData = useMemo(() => {
     try {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (!Array.isArray(parsed)) {
+        return [];
+      }
+      return parsed;
     } catch (error) {
       console.error('Failed to parse chart data:', error);
       return [];
     }
   }, [data]);
+
+  // Auto-detect value keys (all numeric keys except xAxisKey)
+  const valueKeys = useMemo(() => {
+    if (parsedData.length === 0) return [];
+
+    const firstItem = parsedData[0];
+    const keys = Object.keys(firstItem).filter(key => {
+      if (key === xAxisKey) return false;
+      const value = firstItem[key];
+      return typeof value === 'number';
+    });
+
+    return keys;
+  }, [parsedData, xAxisKey]);
+
+  // Generate opacity values based on chart type
+  const opacities = useMemo(() => {
+    if (chartType === 'stacked') {
+      // For stacked: opacity varies across segments
+      // Top segment (last value key) is 100%, bottom decreases
+      const count = valueKeys.length;
+      if (count === 0) return [];
+      if (count === 1) return [1.0];
+      if (count === 2) return [0.75, 1.0];
+
+      const result: number[] = [];
+      for (let i = 0; i < count; i++) {
+        if (i === 0) {
+          result.push(0.5); // Bottom segment - lightest
+        } else if (i === count - 1) {
+          result.push(1.0); // Top segment - boldest
+        } else {
+          result.push(0.75); // Middle segments
+        }
+      }
+      return result;
+    } else {
+      // For column: opacity varies across bars (left to right)
+      const count = parsedData.length;
+      if (count === 0) return [];
+      if (count === 1) return [1.0];
+      if (count === 2) return [0.75, 1.0];
+
+      const result: number[] = [];
+      for (let i = 0; i < count; i++) {
+        if (i === 0) {
+          result.push(0.5); // First (leftmost) - lightest
+        } else if (i === count - 1) {
+          result.push(1.0); // Last (rightmost) - boldest
+        } else {
+          result.push(0.75); // Middle bars
+        }
+      }
+      return result;
+    }
+  }, [parsedData, valueKeys, chartType]);
+
+  // For column mode: Add opacity values to data
+  const dataWithOpacity = parsedData.map((item, index) => ({
+    ...item,
+    opacity: opacities[index],
+  }));
 
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
@@ -114,8 +177,9 @@ export const BarChart: React.FC<BarChartProps> = ({
           <pre>
             {JSON.stringify(
               [
-                { name: 'Page A', value1: 4000, value2: 2400 },
-                { name: 'Page B', value1: 3000, value2: 1398 },
+                { name: '2022', value: 10 },
+                { name: '2023', value: 11 },
+                { name: '2024', value: 12 },
               ],
               null,
               2
@@ -126,16 +190,11 @@ export const BarChart: React.FC<BarChartProps> = ({
     );
   }
 
-  // Check if first bar key exists in data
-  const hasBar1 = parsedData.some((item: any) => item.hasOwnProperty(bar1Key));
-  // Check if second bar key exists in data
-  const hasBar2 = parsedData.some((item: any) => item.hasOwnProperty(bar2Key));
-
   return (
     <div style={{ width: '100%', height }} className="bar-chart-container">
       <ResponsiveContainer>
         <RechartsBarChart
-          data={parsedData}
+          data={dataWithOpacity}
           margin={{
             top: 0,
             right: 8,
@@ -164,28 +223,41 @@ export const BarChart: React.FC<BarChartProps> = ({
         )}
         {showLegend && <Legend wrapperStyle={{ fontFamily: 'inherit' }} />}
 
-        {hasBar1 && (
-          <Bar
-            dataKey={bar1Key}
-            fill={bar1Fill}
-            activeBar={{
-              filter: 'brightness(0.97)',
-            }}
-            radius={[barRadius, barRadius, 0, 0]}
-            isAnimationActive={enableAnimation}
-          />
-        )}
-
-        {hasBar2 && (
-          <Bar
-            dataKey={bar2Key}
-            fill={bar2Fill}
-            activeBar={{
-              filter: 'brightness(0.97)',
-            }}
-            radius={[barRadius, barRadius, 0, 0]}
-            isAnimationActive={enableAnimation}
-          />
+        {chartType === 'stacked' ? (
+          // Stacked mode: render a Bar for each value key
+          valueKeys.map((key, keyIndex) => (
+            <Bar
+              key={key}
+              dataKey={key}
+              stackId="stack"
+              fill={baseColor}
+              fillOpacity={opacities[keyIndex]}
+              activeBar={{
+                filter: 'brightness(0.97)',
+              }}
+              radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
+              isAnimationActive={enableAnimation}
+            />
+          ))
+        ) : (
+          // Column mode: render a Bar for each value key (grouped, not stacked)
+          // Opacity varies by X-axis position (data row), not by value key
+          valueKeys.map((key) => (
+            <Bar
+              key={key}
+              dataKey={key}
+              fill={baseColor}
+              activeBar={{
+                filter: 'brightness(0.97)',
+              }}
+              radius={[barRadius, barRadius, 0, 0]}
+              isAnimationActive={enableAnimation}
+            >
+              {dataWithOpacity.map((entry, index) => (
+                <Cell key={`cell-${index}`} fillOpacity={entry.opacity} />
+              ))}
+            </Bar>
+          ))
         )}
       </RechartsBarChart>
     </ResponsiveContainer>

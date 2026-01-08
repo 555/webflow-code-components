@@ -5,13 +5,9 @@ import { PieChart } from './components/PieChart/PieChart';
 
 const sampleData = JSON.stringify(
   [
-    { name: 'Page A', value1: 4000, value2: 2400 },
-    { name: 'Page B', value1: 3000, value2: 1398 },
-    { name: 'Page C', value1: 2000, value2: 9800 },
-    { name: 'Page D', value1: 2780, value2: 3908 },
-    { name: 'Page E', value1: 1890, value2: 4800 },
-    { name: 'Page F', value1: 2390, value2: 3800 },
-    { name: 'Page G', value1: 3490, value2: 4300 },
+    { name: 'Q1', revenue: 100, costs: 40, profit: 60 },
+    { name: 'Q2', revenue: 120, costs: 45, profit: 75 },
+    { name: 'Q3', revenue: 140, costs: 50, profit: 90 },
   ],
   null,
   2
@@ -76,10 +72,8 @@ function App() {
             <BarChart
               data={sampleData}
               xAxisKey="name"
-              bar1Key="value1"
-              bar2Key="value2"
-              bar1Fill="#8884d8"
-              bar2Fill="#82ca9d"
+              chartType="column"
+              baseColor="#00a0dc"
               barRadius={10}
               showCartesianGrid={true}
               showXAxis={true}
@@ -87,7 +81,7 @@ function App() {
               showTooltip={true}
               showLegend={true}
               enableAnimation={true}
-              valueFormat="currency"
+              valueFormat="number"
               currencySymbol="$"
               gridStrokeDasharray="3 3"
               height={400}

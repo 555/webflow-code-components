@@ -5,13 +5,9 @@ import './BarChart.css';
 
 const defaultData = JSON.stringify(
   [
-    { name: 'Page A', value1: 4000, value2: 2400 },
-    { name: 'Page B', value1: 3000, value2: 1398 },
-    { name: 'Page C', value1: 2000, value2: 9800 },
-    { name: 'Page D', value1: 2780, value2: 3908 },
-    { name: 'Page E', value1: 1890, value2: 4800 },
-    { name: 'Page F', value1: 2390, value2: 3800 },
-    { name: 'Page G', value1: 3490, value2: 4300 },
+    { name: 'Q1', revenue: 100, costs: 40, profit: 60 },
+    { name: 'Q2', revenue: 120, costs: 45, profit: 75 },
+    { name: 'Q3', revenue: 140, costs: 50, profit: 90 },
   ],
   null,
   2
@@ -19,7 +15,7 @@ const defaultData = JSON.stringify(
 
 export default declareComponent(BarChart, {
   name: 'Bar Chart',
-  description: 'Customizable bar chart component powered by Recharts with responsive design and configurable styling',
+  description: 'Smart bar chart with auto-detection - displays column or stacked bars with opacity variation',
   group: 'Charts',
 
   props: {
@@ -28,25 +24,30 @@ export default declareComponent(BarChart, {
       name: 'Chart Data (JSON)',
       defaultValue: defaultData,
       group: 'Data',
-      tooltip: 'Provide chart data as a JSON array. Each object should have the keys specified in "X-Axis Key", "Bar 1 Key", and "Bar 2 Key" fields.',
+      tooltip: 'Auto-detects numeric values. Single value = column chart, multiple values = stackable chart.',
     }),
     xAxisKey: props.Text({
       name: 'X-Axis Key',
       defaultValue: 'name',
       group: 'Data',
-      tooltip: 'The property name in your data to use for X-axis labels',
+      tooltip: 'The property name in your data for X-axis labels',
     }),
-    bar1Key: props.Text({
-      name: 'Bar 1 Data Key',
-      defaultValue: 'value1',
-      group: 'Data',
-      tooltip: 'The property name in your data to use for the first bar series',
+
+    // Chart Configuration
+    chartType: props.Variant({
+      name: 'Chart Type',
+      defaultValue: 'column',
+      group: 'Chart Configuration',
+      options: ['column', 'stacked'],
+      tooltip: 'Column: groups bars side-by-side (opacity varies left to right). Stacked: stacks bars vertically (opacity varies bottom to top, top=boldest).',
     }),
-    bar2Key: props.Text({
-      name: 'Bar 2 Data Key',
-      defaultValue: 'value2',
-      group: 'Data',
-      tooltip: 'The property name in your data to use for the second bar series',
+
+    // Color Configuration
+    baseColor: props.Text({
+      name: 'Base Color',
+      defaultValue: '#00a0dc',
+      group: 'Color',
+      tooltip: 'Base color for all bars. Opacity varies based on chart type. Darkens by 3% on hover.',
     }),
 
     // Chart Features
@@ -74,6 +75,7 @@ export default declareComponent(BarChart, {
       name: 'Show Legend',
       defaultValue: true,
       group: 'Chart Features',
+      tooltip: 'Display legend showing all value keys',
     }),
     enableAnimation: props.Boolean({
       name: 'Enable Animation',
@@ -103,23 +105,7 @@ export default declareComponent(BarChart, {
       tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "$", "€", "£")',
     }),
 
-    // Bar 1 Styling
-    bar1Fill: props.Text({
-      name: 'Bar 1 Color',
-      defaultValue: '#8884d8',
-      group: 'Bar 1 Styling',
-      tooltip: 'Color for the first bar (hex, rgb, or color name). Darkens by 3% on hover.',
-    }),
-
-    // Bar 2 Styling
-    bar2Fill: props.Text({
-      name: 'Bar 2 Color',
-      defaultValue: '#82ca9d',
-      group: 'Bar 2 Styling',
-      tooltip: 'Color for the second bar (hex, rgb, or color name). Darkens by 3% on hover.',
-    }),
-
-    // Bar Shape
+    // Bar Styling
     barRadius: props.Number({
       name: 'Bar Corner Radius',
       defaultValue: 10,
