@@ -15,9 +15,9 @@ const sampleData = JSON.stringify(
 
 const horizontalData = JSON.stringify(
   [
-    { label: '2022', value: 14.8 },
-    { label: '2023', value: 16.5 },
-    { label: '2024', value: 17.5 },
+    { label: '2022', value: 18 },
+    { label: '2023', value: 6 },
+    { label: '2024', value: -22 },
   ],
   null,
   2
@@ -106,8 +106,6 @@ function App() {
               enableAnimation={true}
               valueFormat="percent"
               currencySymbol="$"
-              minValue={0}
-              maxValue={20}
               height={160}
               barCategoryGap={4}
               barRadius={8}

@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Cell,
   Tooltip,
+  ReferenceLine,
 } from 'recharts';
 
 export interface HorizontalBarChartProps {
@@ -66,8 +67,8 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   gridStrokeColor = '#e6e6e6',
   valueFormat = 'number',
   currencySymbol = '$',
-  minValue = 0,
-  maxValue = 20,
+  minValue,
+  maxValue,
   height = 160,
   barCategoryGap = 4,
   barRadius = 8,
@@ -103,6 +104,46 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
       1.0,  // Bottom bar - 100% opacity (newest/last data item)
     ];
   }, []);
+
+  // Calculate domain (min/max) for X-axis
+  const calculatedDomain = useMemo(() => {
+    if (parsedData.length === 0) return [0, 20];
+
+    // Get all values from data
+    const values = parsedData.map(item => Number(item[valueKey]) || 0);
+    const dataMin = Math.min(...values);
+    const dataMax = Math.max(...values);
+
+    // Determine final min/max
+    let min = minValue !== undefined ? minValue : dataMin;
+    let max = maxValue !== undefined ? maxValue : dataMax;
+
+    // Auto-range: Add padding and ensure 0 is included when appropriate
+    if (minValue === undefined || maxValue === undefined) {
+      // If data contains negative values, ensure 0 is included
+      if (dataMin < 0 && min > 0) min = 0;
+      if (dataMax > 0 && max < 0) max = 0;
+
+      // Add 10% padding for better visuals
+      const range = Math.abs(max - min);
+      const padding = range * 0.1;
+
+      if (minValue === undefined) {
+        min = min < 0 ? min - padding : Math.min(0, min);
+      }
+      if (maxValue === undefined) {
+        max = max > 0 ? max + padding : Math.max(0, max);
+      }
+    }
+
+    return [min, max];
+  }, [parsedData, valueKey, minValue, maxValue]);
+
+  // Check if we need to show a reference line at 0
+  const showZeroLine = useMemo(() => {
+    const [min, max] = calculatedDomain;
+    return min < 0 && max > 0;
+  }, [calculatedDomain]);
 
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
@@ -187,11 +228,20 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
             <XAxis
               type="number"
               orientation="top"
-              domain={[minValue, maxValue]}
+              domain={calculatedDomain}
               tickFormatter={formatValue}
               axisLine={false}
               tickLine={false}
               style={{ fontFamily: 'inherit', fontSize: 12 }}
+            />
+          )}
+
+          {showZeroLine && (
+            <ReferenceLine
+              x={0}
+              stroke="#000000"
+              strokeWidth={1.5}
+              strokeOpacity={0.3}
             />
           )}
 

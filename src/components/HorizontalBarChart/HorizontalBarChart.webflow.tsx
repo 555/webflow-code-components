@@ -5,9 +5,9 @@ import './HorizontalBarChart.css';
 
 const defaultData = JSON.stringify(
   [
-    { label: '2022', value: 14.8 },
-    { label: '2023', value: 16.5 },
-    { label: '2024', value: 17.5 },
+    { label: '2022', value: 18 },
+    { label: '2023', value: 6 },
+    { label: '2024', value: -22 },
   ],
   null,
   2
@@ -15,7 +15,7 @@ const defaultData = JSON.stringify(
 
 export default declareComponent(HorizontalBarChart, {
   name: 'Horizontal Bar Chart',
-  description: 'Horizontal bar chart with 3 bars and automatic opacity variation - perfect for year-over-year comparisons',
+  description: 'Horizontal bar chart with 3 bars, automatic opacity variation, and bidirectional support for positive/negative values - perfect for year-over-year comparisons and variance analysis',
   group: 'Charts',
 
   props: {
@@ -24,7 +24,7 @@ export default declareComponent(HorizontalBarChart, {
       name: 'Chart Data (JSON)',
       defaultValue: defaultData,
       group: 'Data',
-      tooltip: 'Provide data as JSON array with 3 items. Each object needs label and value properties.',
+      tooltip: 'Provide data as JSON array with 3 items. Each object needs label and value properties. Supports positive and negative values for bidirectional charts.',
     }),
     labelKey: props.Text({
       name: 'Label Key',
@@ -105,22 +105,16 @@ export default declareComponent(HorizontalBarChart, {
 
     // Value Configuration
     minValue: props.Number({
-      name: 'Min Value',
-      defaultValue: 0,
+      name: 'Min Value (Optional)',
       group: 'Value Range',
-      tooltip: 'Minimum value for the axis scale',
-      min: 0,
-      max: 100,
-      decimals: 0,
+      tooltip: 'Leave empty for auto-range. Set manually to override minimum axis value. Supports negative values for bidirectional charts.',
+      decimals: 1,
     }),
     maxValue: props.Number({
-      name: 'Max Value',
-      defaultValue: 20,
+      name: 'Max Value (Optional)',
       group: 'Value Range',
-      tooltip: 'Maximum value for the axis scale',
-      min: 1,
-      max: 1000,
-      decimals: 0,
+      tooltip: 'Leave empty for auto-range. Set manually to override maximum axis value. Auto-range includes 10% padding and centers at 0 when data has positive and negative values.',
+      decimals: 1,
     }),
 
     // Dimensions
