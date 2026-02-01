@@ -280,7 +280,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             width={yAxisWidth}
             style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
             tickFormatter={formatValue}
-            {...(maxValue !== undefined && maxValue !== null ? { domain: ['auto', Number(maxValue)] } : {})}
+            {...(maxValue != null && maxValue !== '' && !isNaN(Number(maxValue)) ? { domain: [0, Number(maxValue)] } : {})}
           />
         )}
         {showTooltip && (
