@@ -249,6 +249,9 @@ export const BarChart: React.FC<BarChartProps> = ({
     return values;
   }, [parsedData.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
 
+  // Parse maxValue — Webflow may pass unset Number props as empty strings
+  const parsedMaxValue = maxValue != null && String(maxValue) !== '' ? Number(maxValue) : undefined;
+
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
     return (
@@ -280,7 +283,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             width={yAxisWidth}
             style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
             tickFormatter={formatValue}
-            {...(maxValue != null && maxValue !== '' && !isNaN(Number(maxValue)) ? { domain: [0, Number(maxValue)] } : {})}
+            {...(parsedMaxValue != null && !isNaN(parsedMaxValue) ? { domain: [0, parsedMaxValue] } : {})}
           />
         )}
         {showTooltip && (
