@@ -15,7 +15,7 @@ const defaultData = JSON.stringify(
 
 export default declareComponent(BarChart, {
   name: 'Bar Chart',
-  description: 'Smart bar chart with auto-detection - displays column or stacked bars with opacity variation',
+  description: 'Smart bar chart with auto-detection - displays column or stacked bars with automatic color variation',
   group: 'Charts',
 
   props: {
@@ -47,7 +47,30 @@ export default declareComponent(BarChart, {
       name: 'Base Color',
       defaultValue: '#00a0dc',
       group: 'Color',
-      tooltip: 'Base color for all bars. Opacity varies based on chart type. Darkens by 3% on hover.',
+      tooltip: 'Base color for all bars. OR provide comma-separated hex codes (e.g., #00a0dc,#82ca9d,#ffc658) to override color mode and use direct colors. Colors darken by 3% on hover.',
+    }),
+    colorMode: props.Variant({
+      name: 'Color Mode',
+      defaultValue: 'opacity',
+      group: 'Color',
+      options: ['opacity', 'brightness', 'contrast', 'saturation', 'hue-rotate', 'none'],
+      tooltip: 'How to differentiate bars: opacity (transparency), brightness (lightness), contrast, saturation (color intensity), hue-rotate (color shift), or none (all same). Ignored if Base Color contains CSV.',
+    }),
+    colorIncrement: props.Number({
+      name: 'Color Increment',
+      defaultValue: 25,
+      group: 'Color',
+      tooltip: 'For opacity/contrast/saturation: relative % reduction per bar (compound). For brightness: relative % increase per bar (compound). For hue-rotate: degrees to rotate per bar (additive). Higher values = more contrast between bars. Ignored if Base Color contains CSV.',
+      min: 0,
+      max: 100,
+      decimals: 0,
+    }),
+    colorDirection: props.Variant({
+      name: 'Color Direction',
+      defaultValue: 'first-to-last',
+      group: 'Color',
+      options: ['first-to-last', 'last-to-first'],
+      tooltip: 'Column mode: First to Last = base at left, Last to First = base at right. Stacked mode: First to Last = base at bottom, Last to First = base at top. Ignored if Base Color contains CSV.',
     }),
 
     // Chart Features
@@ -95,8 +118,8 @@ export default declareComponent(BarChart, {
       name: 'Value Format',
       defaultValue: 'number',
       group: 'Value Formatting',
-      options: ['number', 'percent', 'currency'],
-      tooltip: 'Format values as numbers (with K/M suffix), percentages (%), or currency (with symbol and K/M suffix)',
+      options: ['number', 'percent', 'currency', 'multiplier'],
+      tooltip: 'Format values as numbers (with K/M suffix), percentages (%), currency (with symbol and K/M suffix), or multiplier (with x suffix)',
     }),
     currencySymbol: props.Text({
       name: 'Currency Symbol',
@@ -113,6 +136,15 @@ export default declareComponent(BarChart, {
       tooltip: 'Border radius for the top corners of bars (in pixels)',
       min: 0,
       max: 50,
+      decimals: 0,
+    }),
+
+    // Axis Configuration
+    maxValue: props.Number({
+      name: 'Max Value',
+      group: 'Chart Features',
+      tooltip: 'Set a fixed maximum value for the Y-axis. Leave empty to auto-scale based on data.',
+      min: 0,
       decimals: 0,
     }),
 
@@ -136,6 +168,13 @@ export default declareComponent(BarChart, {
       min: 30,
       max: 150,
       decimals: 0,
+    }),
+
+    // Accessibility
+    id: props.Id({
+      name: 'Element ID',
+      group: 'Accessibility',
+      tooltip: 'Unique ID for this chart element (useful for anchors and accessibility)',
     }),
   },
 

@@ -21,6 +21,9 @@ export interface BarChartProps {
 
   // Color
   baseColor?: string;
+  colorMode?: string; // "opacity" | "brightness" | "contrast" | "saturation" | "hue-rotate" | "none"
+  colorIncrement?: number;
+  colorDirection?: string; // "first-to-last" | "last-to-first"
 
   // Bar Styling
   barRadius?: number;
@@ -34,17 +37,23 @@ export interface BarChartProps {
   enableAnimation?: boolean;
 
   // Value Formatting
-  valueFormat?: string; // "number" | "percent" | "currency"
+  valueFormat?: string; // "number" | "percent" | "currency" | "multiplier"
   currencySymbol?: string;
 
   // Grid Styling
   gridStrokeDasharray?: string;
+
+  // Axis Configuration
+  maxValue?: number;
 
   // Dimensions
   height?: number;
 
   // Axis width
   yAxisWidth?: number;
+
+  // Accessibility
+  id?: string;
 }
 
 export const BarChart: React.FC<BarChartProps> = ({
@@ -52,6 +61,9 @@ export const BarChart: React.FC<BarChartProps> = ({
   xAxisKey = 'name',
   chartType = 'column',
   baseColor = '#00a0dc',
+  colorMode = 'opacity',
+  colorIncrement = 25,
+  colorDirection = 'first-to-last',
   barRadius = 10,
   showCartesianGrid = true,
   showXAxis = true,
@@ -62,8 +74,10 @@ export const BarChart: React.FC<BarChartProps> = ({
   valueFormat = 'number',
   currencySymbol = '£',
   gridStrokeDasharray = '3 3',
+  maxValue,
   height = 400,
   yAxisWidth = 60,
+  id,
 }) => {
   // Format value based on format type
   const formatValue = (value: number): string => {
@@ -81,6 +95,9 @@ export const BarChart: React.FC<BarChartProps> = ({
         return `${currencySymbol}${(numValue / 1000).toFixed(1)}K`;
       }
       return `${currencySymbol}${numValue}`;
+    } else if (valueFormat === 'multiplier') {
+      // Multiplier format - adds 'x' suffix, no K/M
+      return `${numValue}x`;
     } else {
       // Number format with K/M suffix
       if (absValue >= 1000000) {
@@ -119,82 +136,133 @@ export const BarChart: React.FC<BarChartProps> = ({
     return keys;
   }, [parsedData, xAxisKey]);
 
-  // Generate opacity values based on chart type
-  const opacities = useMemo(() => {
-    if (chartType === 'stacked') {
-      // For stacked: opacity varies across segments
-      // Top segment (last value key) is 100%, bottom decreases
-      const count = valueKeys.length;
-      if (count === 0) return [];
-      if (count === 1) return [1.0];
-      if (count === 2) return [0.75, 1.0];
+  // Detect if baseColor contains CSV (comma-separated values)
+  const isColorCSV = useMemo(() => {
+    return baseColor.includes(',');
+  }, [baseColor]);
 
-      const result: number[] = [];
-      for (let i = 0; i < count; i++) {
-        if (i === 0) {
-          result.push(0.5); // Bottom segment - lightest
-        } else if (i === count - 1) {
-          result.push(1.0); // Top segment - boldest
-        } else {
-          result.push(0.75); // Middle segments
-        }
-      }
-      return result;
-    } else {
-      // For column: opacity varies across bars (left to right)
-      const count = parsedData.length;
-      if (count === 0) return [];
-      if (count === 1) return [1.0];
-      if (count === 2) return [0.75, 1.0];
-
-      const result: number[] = [];
-      for (let i = 0; i < count; i++) {
-        if (i === 0) {
-          result.push(0.5); // First (leftmost) - lightest
-        } else if (i === count - 1) {
-          result.push(1.0); // Last (rightmost) - boldest
-        } else {
-          result.push(0.75); // Middle bars
-        }
-      }
-      return result;
+  // Parse colors from CSV if detected
+  const colorArray = useMemo(() => {
+    if (isColorCSV) {
+      return baseColor.split(',').map(color => color.trim());
     }
-  }, [parsedData, valueKeys, chartType]);
+    return null;
+  }, [baseColor, isColorCSV]);
 
-  // For column mode: Add opacity values to data
-  const dataWithOpacity = parsedData.map((item, index) => ({
-    ...item,
-    opacity: opacities[index],
-  }));
+  // Color values for stacked mode (varies by value keys)
+  const stackedColorValues = useMemo(() => {
+    // If CSV colors detected, skip color differentiation calculation
+    if (isColorCSV) return [];
+
+    const count = valueKeys.length;
+    if (count === 0 || colorMode === 'none') {
+      return Array(count).fill({ opacity: 1, filter: undefined });
+    }
+
+    const values: { opacity: number; filter?: string }[] = [];
+    const incrementDecimal = colorIncrement / 100;
+
+    if (colorMode === 'hue-rotate') {
+      for (let i = 0; i < count; i++) {
+        const degrees = i * colorIncrement;
+        const finalDegrees = colorDirection === 'last-to-first' ? -degrees : degrees;
+        values.push({ opacity: 1, filter: `hue-rotate(${finalDegrees}deg)` });
+      }
+    } else {
+      const rawValues: number[] = [];
+      let currentValue = 100;
+      for (let i = 0; i < count; i++) {
+        rawValues.push(currentValue);
+        if (colorMode === 'brightness') {
+          // Brightness: compound increase (getting brighter)
+          currentValue = currentValue * (1 + incrementDecimal);
+        } else {
+          // Opacity, contrast, saturation: compound reduction
+          currentValue = currentValue * (1 - incrementDecimal);
+        }
+      }
+      if (colorDirection === 'last-to-first') {
+        rawValues.reverse();
+      }
+      for (const value of rawValues) {
+        if (colorMode === 'opacity') {
+          values.push({ opacity: value / 100, filter: undefined });
+        } else if (colorMode === 'saturation') {
+          // Saturation uses decimal format
+          values.push({ opacity: 1, filter: `saturate(${(value / 100).toFixed(4)})` });
+        } else {
+          // brightness, contrast use percentage
+          values.push({ opacity: 1, filter: `${colorMode}(${value}%)` });
+        }
+      }
+    }
+    return values;
+  }, [valueKeys.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
+
+  // Color values for column mode (varies by data rows)
+  const columnColorValues = useMemo(() => {
+    // If CSV colors detected, skip color differentiation calculation
+    if (isColorCSV) return [];
+
+    const count = parsedData.length;
+    if (count === 0 || colorMode === 'none') {
+      return Array(count).fill({ opacity: 1, filter: undefined });
+    }
+
+    const values: { opacity: number; filter?: string }[] = [];
+    const incrementDecimal = colorIncrement / 100;
+
+    if (colorMode === 'hue-rotate') {
+      for (let i = 0; i < count; i++) {
+        const degrees = i * colorIncrement;
+        const finalDegrees = colorDirection === 'last-to-first' ? -degrees : degrees;
+        values.push({ opacity: 1, filter: `hue-rotate(${finalDegrees}deg)` });
+      }
+    } else {
+      const rawValues: number[] = [];
+      let currentValue = 100;
+      for (let i = 0; i < count; i++) {
+        rawValues.push(currentValue);
+        if (colorMode === 'brightness') {
+          // Brightness: compound increase (getting brighter)
+          currentValue = currentValue * (1 + incrementDecimal);
+        } else {
+          // Opacity, contrast, saturation: compound reduction
+          currentValue = currentValue * (1 - incrementDecimal);
+        }
+      }
+      if (colorDirection === 'last-to-first') {
+        rawValues.reverse();
+      }
+      for (const value of rawValues) {
+        if (colorMode === 'opacity') {
+          values.push({ opacity: value / 100, filter: undefined });
+        } else if (colorMode === 'saturation') {
+          // Saturation uses decimal format
+          values.push({ opacity: 1, filter: `saturate(${(value / 100).toFixed(4)})` });
+        } else {
+          // brightness, contrast use percentage
+          values.push({ opacity: 1, filter: `${colorMode}(${value}%)` });
+        }
+      }
+    }
+    return values;
+  }, [parsedData.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
 
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
     return (
       <div className="bar-chart-error">
         <p>No data available. Please provide valid JSON data.</p>
-        <details>
-          <summary>Example format</summary>
-          <pre>
-            {JSON.stringify(
-              [
-                { name: '2022', value: 10 },
-                { name: '2023', value: 11 },
-                { name: '2024', value: 12 },
-              ],
-              null,
-              2
-            )}
-          </pre>
-        </details>
       </div>
     );
   }
 
   return (
-    <div style={{ width: '100%', height }} className="bar-chart-container">
+    <div id={id} style={{ width: '100%', height }} className="bar-chart-container">
       <ResponsiveContainer>
         <RechartsBarChart
-          data={dataWithOpacity}
+          data={parsedData}
           margin={{
             top: 0,
             right: 8,
@@ -212,6 +280,7 @@ export const BarChart: React.FC<BarChartProps> = ({
             width={yAxisWidth}
             style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
             tickFormatter={formatValue}
+            {...(maxValue !== undefined && maxValue !== null ? { domain: ['auto', Number(maxValue)] } : {})}
           />
         )}
         {showTooltip && (
@@ -225,37 +294,76 @@ export const BarChart: React.FC<BarChartProps> = ({
 
         {chartType === 'stacked' ? (
           // Stacked mode: render a Bar for each value key
-          valueKeys.map((key, keyIndex) => (
-            <Bar
-              key={key}
-              dataKey={key}
-              stackId="stack"
-              fill={baseColor}
-              fillOpacity={opacities[keyIndex]}
-              activeBar={{
-                filter: 'brightness(0.97)',
-              }}
-              radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
-              isAnimationActive={enableAnimation}
-            />
-          ))
+          // Color varies by value key (stacked segment)
+          valueKeys.map((key, keyIndex) => {
+            // If CSV colors, use them directly
+            if (isColorCSV && colorArray) {
+              return (
+                <Bar
+                  key={key}
+                  dataKey={key}
+                  stackId="stack"
+                  fill={colorArray[keyIndex % colorArray.length]}
+                  activeBar={{
+                    filter: 'brightness(0.97)',
+                  }}
+                  radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
+                  isAnimationActive={enableAnimation}
+                />
+              );
+            }
+            // Otherwise use color differentiation system
+            const colorValue = stackedColorValues[keyIndex] || { opacity: 1, filter: undefined };
+            return (
+              <Bar
+                key={key}
+                dataKey={key}
+                stackId="stack"
+                fill={baseColor}
+                fillOpacity={colorValue.opacity}
+                style={colorValue.filter ? { filter: colorValue.filter } : undefined}
+                activeBar={{
+                  filter: 'brightness(0.97)',
+                }}
+                radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
+                isAnimationActive={enableAnimation}
+              />
+            );
+          })
         ) : (
           // Column mode: render a Bar for each value key (grouped, not stacked)
-          // Opacity varies by X-axis position (data row), not by value key
+          // Color varies by X-axis position (data row), not by value key
           valueKeys.map((key) => (
             <Bar
               key={key}
               dataKey={key}
-              fill={baseColor}
               activeBar={{
                 filter: 'brightness(0.97)',
               }}
               radius={[barRadius, barRadius, 0, 0]}
               isAnimationActive={enableAnimation}
             >
-              {dataWithOpacity.map((entry, index) => (
-                <Cell key={`cell-${index}`} fillOpacity={entry.opacity} />
-              ))}
+              {parsedData.map((entry, index) => {
+                // If CSV colors, use them directly
+                if (isColorCSV && colorArray) {
+                  return (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={colorArray[index % colorArray.length]}
+                    />
+                  );
+                }
+                // Otherwise use color differentiation system
+                const colorValue = columnColorValues[index] || { opacity: 1, filter: undefined };
+                return (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={baseColor}
+                    fillOpacity={colorValue.opacity}
+                    style={colorValue.filter ? { filter: colorValue.filter } : undefined}
+                  />
+                );
+              })}
             </Bar>
           ))
         )}
