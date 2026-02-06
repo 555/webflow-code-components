@@ -1,21 +1,24 @@
 import { declareComponent } from '@webflow/react';
 import { props } from '@webflow/data-types';
-import { HorizontalBarChart } from './HorizontalBarChart';
-import './HorizontalBarChart.css';
+import { LineChart } from './LineChart';
+import './LineChart.css';
 
 const defaultData = JSON.stringify(
   [
-    { label: '2022', value: 18 },
-    { label: '2023', value: 6 },
-    { label: '2024', value: -22 },
+    { name: 'Jan', revenue: 4000, costs: 2400 },
+    { name: 'Feb', revenue: 3000, costs: 1398 },
+    { name: 'Mar', revenue: 2000, costs: 5800 },
+    { name: 'Apr', revenue: 2780, costs: 3908 },
+    { name: 'May', revenue: 1890, costs: 4800 },
+    { name: 'Jun', revenue: 2390, costs: 3800 },
   ],
   null,
   2
 );
 
-export default declareComponent(HorizontalBarChart, {
-  name: 'Horizontal Bar Chart',
-  description: 'Horizontal bar chart with automatic color variation and bidirectional support for positive/negative values - perfect for year-over-year comparisons and variance analysis',
+export default declareComponent(LineChart, {
+  name: 'Line Chart',
+  description: 'Interactive line chart with line and area modes — auto-detects numeric keys for multi-line support with color differentiation',
   group: 'Charts',
 
   props: {
@@ -24,40 +27,43 @@ export default declareComponent(HorizontalBarChart, {
       name: 'Chart Data (JSON)',
       defaultValue: defaultData,
       group: 'Data',
-      tooltip: 'Provide data as JSON array with 3 items. Each object needs label and value properties. Supports positive and negative values for bidirectional charts.',
+      tooltip: 'Auto-detects numeric values. Each numeric key becomes a separate line.',
     }),
-    labelKey: props.Text({
-      name: 'Label Key',
-      defaultValue: 'label',
+    xAxisKey: props.Text({
+      name: 'X-Axis Key',
+      defaultValue: 'name',
       group: 'Data',
-      tooltip: 'The property name in your data for bar labels (e.g., years)',
+      tooltip: 'The property name in your data for X-axis labels',
     }),
-    valueKey: props.Text({
-      name: 'Value Key',
-      defaultValue: 'value',
-      group: 'Data',
-      tooltip: 'The property name in your data for bar values',
+
+    // Chart Configuration
+    chartType: props.Variant({
+      name: 'Chart Type',
+      defaultValue: 'line',
+      group: 'Chart Configuration',
+      options: ['line', 'area'],
+      tooltip: 'Line: draws lines connecting data points. Area: fills under each line at 0.15 opacity for a layered look.',
     }),
 
     // Color Configuration
     baseColor: props.Text({
       name: 'Base Color',
-      defaultValue: '#ff007a',
+      defaultValue: '#00a0dc',
       group: 'Color',
-      tooltip: 'Base color for all bars. OR provide comma-separated hex codes (e.g., #ff007a,#00a0dc,#82ca9d) to override color mode and use direct colors. Colors darken by 3% on hover.',
+      tooltip: 'Base color for all lines. OR provide comma-separated hex codes (e.g., #00a0dc,#82ca9d,#ffc658) to assign direct colors to each line in order. Overrides Color Mode when used.',
     }),
     colorMode: props.Variant({
       name: 'Color Mode',
       defaultValue: 'opacity',
       group: 'Color',
       options: ['opacity', 'brightness', 'contrast', 'saturation', 'hue-rotate', 'none'],
-      tooltip: 'How to differentiate bars: opacity (transparency), brightness (lightness), contrast, saturation (color intensity), hue-rotate (color shift), or none (all same). Ignored if Base Color contains CSV.',
+      tooltip: 'How to differentiate lines: opacity (transparency), brightness (lightness), contrast, saturation (color intensity), hue-rotate (color shift), or none (all same). Ignored if Base Color contains CSV.',
     }),
     colorIncrement: props.Number({
       name: 'Color Increment',
       defaultValue: 25,
       group: 'Color',
-      tooltip: 'For opacity/contrast/saturation: relative % reduction per bar (compound). For brightness: relative % increase per bar (compound). For hue-rotate: degrees to rotate per bar (additive). Higher values = more contrast between bars. Ignored if Base Color contains CSV.',
+      tooltip: 'For opacity/contrast/saturation: relative % reduction per line (compound). For brightness: relative % increase per line (compound). For hue-rotate: degrees to rotate per line (additive). Ignored if Base Color contains CSV.',
       min: 0,
       max: 100,
       decimals: 0,
@@ -67,50 +73,87 @@ export default declareComponent(HorizontalBarChart, {
       defaultValue: 'first-to-last',
       group: 'Color',
       options: ['first-to-last', 'last-to-first'],
-      tooltip: 'First to Last: base color at top, lighter/shifted below. Last to First: base color at bottom, lighter/shifted above. Ignored if Base Color contains CSV.',
+      tooltip: 'First to Last: base color on first line. Last to First: base color on last line. Ignored if Base Color contains CSV.',
+    }),
+
+    // Line Styling
+    strokeWidth: props.Number({
+      name: 'Line Thickness',
+      defaultValue: 2,
+      group: 'Line Styling',
+      tooltip: 'Width of each line in pixels',
+      min: 1,
+      max: 8,
+      decimals: 0,
+    }),
+    showDots: props.Boolean({
+      name: 'Show Data Points',
+      defaultValue: true,
+      group: 'Line Styling',
+      tooltip: 'Show circular markers at each data point',
+    }),
+    dotSize: props.Number({
+      name: 'Dot Size',
+      defaultValue: 4,
+      group: 'Line Styling',
+      tooltip: 'Radius of data point markers in pixels. Ignored when Show Data Points is off.',
+      min: 1,
+      max: 8,
+      decimals: 0,
     }),
 
     // Chart Features
-    showGrid: props.Boolean({
+    showCartesianGrid: props.Boolean({
       name: 'Show Grid',
       defaultValue: true,
       group: 'Chart Features',
     }),
-    gridStrokeColor: props.Text({
-      name: 'Grid Stroke Color',
-      defaultValue: '#e6e6e6',
-      group: 'Chart Features',
-      tooltip: 'Color for the grid lines (hex, rgb, or color name)',
-    }),
     showXAxis: props.Boolean({
-      name: 'Show Top Axis Ticks',
+      name: 'Show X-Axis Ticks',
       defaultValue: true,
       group: 'Chart Features',
-      tooltip: 'Show or hide top axis tick labels',
+      tooltip: 'Show or hide X-axis tick labels',
     }),
     showYAxis: props.Boolean({
-      name: 'Show Left Labels',
+      name: 'Show Y-Axis Ticks',
       defaultValue: true,
       group: 'Chart Features',
-      tooltip: 'Show or hide category labels on the left',
-    }),
-    showLabels: props.Boolean({
-      name: 'Show Value Labels',
-      defaultValue: true,
-      group: 'Chart Features',
-      tooltip: 'Show percentage/value labels on the right end of bars',
+      tooltip: 'Show or hide Y-axis tick labels',
     }),
     showTooltip: props.Boolean({
       name: 'Show Tooltip',
       defaultValue: true,
       group: 'Chart Features',
-      tooltip: 'Show interactive tooltip on hover',
+    }),
+    showLegend: props.Boolean({
+      name: 'Show Legend',
+      defaultValue: true,
+      group: 'Chart Features',
+      tooltip: 'Display legend showing all line labels',
     }),
     enableAnimation: props.Boolean({
       name: 'Enable Animation',
       defaultValue: true,
       group: 'Chart Features',
       tooltip: 'Enable or disable chart animations',
+    }),
+    gridStrokeDasharray: props.Text({
+      name: 'Grid Pattern',
+      defaultValue: '3 3',
+      group: 'Chart Features',
+      tooltip: 'CSS stroke-dasharray for grid lines (e.g., "3 3" for dashed)',
+    }),
+    gridColor: props.Text({
+      name: 'Grid Color',
+      defaultValue: '#ccc',
+      group: 'Chart Features',
+      tooltip: 'Color of the grid lines (hex, rgb, or color name)',
+    }),
+    axisLineColor: props.Text({
+      name: 'Axis Line Color',
+      defaultValue: '#666',
+      group: 'Chart Features',
+      tooltip: 'Color of the X and Y axis lines (hex, rgb, or color name)',
     }),
 
     // Value Formatting
@@ -128,61 +171,32 @@ export default declareComponent(HorizontalBarChart, {
       tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "£", "$", "€")',
     }),
 
-    // Value Configuration
-    minValue: props.Number({
-      name: 'Min Value (Optional)',
-      group: 'Value Range',
-      tooltip: 'Leave empty for auto-range. Set manually to override minimum axis value. Supports negative values for bidirectional charts.',
-      decimals: 0,
-      min: -99999999999,
-      max: 99999999999,
-    }),
+    // Axis Configuration
     maxValue: props.Number({
-      name: 'Max Value (Optional)',
-      group: 'Value Range',
-      tooltip: 'Leave empty for auto-range. Set manually to override maximum axis value. When set to negative, bars flip direction to illustrate reduction (growing left from 0).',
+      name: 'Max Value',
+      group: 'Chart Features',
+      tooltip: 'Set a fixed maximum value for the Y-axis. Leave empty to auto-scale based on data.',
+      min: 0,
       decimals: 0,
-      min: -99999999999,
-      max: 99999999999,
     }),
 
     // Dimensions
     height: props.Number({
       name: 'Chart Height',
-      defaultValue: 160,
+      defaultValue: 400,
       group: 'Dimensions',
       tooltip: 'Height of the chart in pixels',
-      min: 100,
-      max: 500,
-      decimals: 0,
-    }),
-    barCategoryGap: props.Number({
-      name: 'Bar Spacing',
-      defaultValue: 4,
-      group: 'Dimensions',
-      tooltip: 'Spacing between bars in pixels',
-      min: 0,
-      max: 50,
-      decimals: 0,
-    }),
-
-    // Bar Styling
-    barRadius: props.Number({
-      name: 'Bar Corner Radius',
-      defaultValue: 8,
-      group: 'Bar Styling',
-      tooltip: 'Border radius for the right corners of bars (in pixels)',
-      min: 0,
-      max: 50,
+      min: 200,
+      max: 1000,
       decimals: 0,
     }),
 
     // Axis Configuration
     yAxisWidth: props.Number({
-      name: 'Left Label Width',
-      defaultValue: 50,
+      name: 'Y-Axis Width',
+      defaultValue: 60,
       group: 'Chart Features',
-      tooltip: 'Width allocated for left labels (in pixels)',
+      tooltip: 'Width allocated for Y-axis labels (in pixels)',
       min: 30,
       max: 150,
       decimals: 0,
@@ -190,16 +204,16 @@ export default declareComponent(HorizontalBarChart, {
 
     // Axis Labels
     xAxisLabel: props.Text({
-      name: 'Top Axis Label',
+      name: 'X-Axis Label',
       defaultValue: '',
       group: 'Chart Features',
-      tooltip: 'Label text displayed above the top axis. Leave empty to hide.',
+      tooltip: 'Label text displayed below the X-axis. Leave empty to hide.',
     }),
     yAxisLabel: props.Text({
-      name: 'Left Axis Label',
+      name: 'Y-Axis Label',
       defaultValue: '',
       group: 'Chart Features',
-      tooltip: 'Label text displayed along the left axis. Leave empty to hide.',
+      tooltip: 'Label text displayed along the Y-axis. Leave empty to hide.',
     }),
 
     // Tooltip Styling

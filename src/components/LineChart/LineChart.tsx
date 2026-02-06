@@ -1,24 +1,25 @@
 import React, { useMemo } from 'react';
 import {
-  BarChart as RechartsBarChart,
-  Bar,
+  LineChart as RechartsLineChart,
+  AreaChart as RechartsAreaChart,
+  Line,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  Cell,
   Label,
 } from 'recharts';
 
-export interface BarChartProps {
+export interface LineChartProps {
   // Data
   data: string;
   xAxisKey?: string;
 
   // Chart Configuration
-  chartType?: string; // "column" | "stacked"
+  chartType?: string; // "line" | "area"
 
   // Color
   baseColor?: string;
@@ -26,8 +27,10 @@ export interface BarChartProps {
   colorIncrement?: number;
   colorDirection?: string; // "first-to-last" | "last-to-first"
 
-  // Bar Styling
-  barRadius?: number;
+  // Line Styling
+  strokeWidth?: number;
+  showDots?: boolean;
+  dotSize?: number;
 
   // Chart Features
   showCartesianGrid?: boolean;
@@ -75,42 +78,6 @@ export interface BarChartProps {
   // Accessibility
   id?: string;
 }
-
-const WrappingXAxisTick = ({ x = 0, y = 0, payload = { value: '' } }: { x?: number; y?: number; payload?: { value: string } }) => {
-  const words = String(payload.value).split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-  const maxChars = 15;
-
-  words.forEach((word) => {
-    if (currentLine === '') {
-      currentLine = word;
-    } else {
-      const testLine = `${currentLine} ${word}`;
-      if (testLine.length > maxChars) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-  });
-  if (currentLine) lines.push(currentLine);
-
-  return (
-    <g transform={`translate(${x},${y + 6})`}>
-      <text textAnchor="middle" style={{ fontSize: 12, fill: 'inherit', fontFamily: 'inherit' }}>
-        {lines.map((line, i) => (
-          <tspan key={i} x={0} dy={i === 0 ? '0.35em' : '1.2em'}>
-            {line}
-          </tspan>
-        ))}
-      </text>
-    </g>
-  );
-};
-
-const wrappingXAxisTickElement = <WrappingXAxisTick />;
 
 interface CustomTooltipProps {
   active?: boolean;
@@ -194,15 +161,17 @@ const CustomLegend = ({ payload }: CustomLegendProps) => {
   );
 };
 
-export const BarChart: React.FC<BarChartProps> = ({
+export const LineChart: React.FC<LineChartProps> = ({
   data,
   xAxisKey = 'name',
-  chartType = 'column',
+  chartType = 'line',
   baseColor = '#00a0dc',
   colorMode = 'opacity',
   colorIncrement = 25,
   colorDirection = 'first-to-last',
-  barRadius = 10,
+  strokeWidth = 2,
+  showDots = true,
+  dotSize = 4,
   showCartesianGrid = true,
   showXAxis = true,
   showYAxis = true,
@@ -236,10 +205,8 @@ export const BarChart: React.FC<BarChartProps> = ({
     const absValue = Math.abs(numValue);
 
     if (valueFormat === 'percent') {
-      // Percentage format - no K/M suffix
       return `${numValue}%`;
     } else if (valueFormat === 'currency') {
-      // Currency format with K/M suffix
       if (absValue >= 1000000) {
         return `${currencySymbol}${(numValue / 1000000).toFixed(1)}M`;
       } else if (absValue >= 1000) {
@@ -247,10 +214,8 @@ export const BarChart: React.FC<BarChartProps> = ({
       }
       return `${currencySymbol}${numValue}`;
     } else if (valueFormat === 'multiplier') {
-      // Multiplier format - adds 'x' suffix, no K/M
       return `${numValue}x`;
     } else {
-      // Number format with K/M suffix
       if (absValue >= 1000000) {
         return `${(numValue / 1000000).toFixed(1)}M`;
       } else if (absValue >= 1000) {
@@ -259,6 +224,7 @@ export const BarChart: React.FC<BarChartProps> = ({
       return numValue.toString();
     }
   };
+
   // Parse JSON data
   const parsedData = useMemo(() => {
     try {
@@ -300,9 +266,8 @@ export const BarChart: React.FC<BarChartProps> = ({
     return null;
   }, [baseColor, isColorCSV]);
 
-  // Color values for stacked mode (varies by value keys)
-  const stackedColorValues = useMemo(() => {
-    // If CSV colors detected, skip color differentiation calculation
+  // Color values per line (varies by value key — same logic as BarChart stacked mode)
+  const lineColorValues = useMemo(() => {
     if (isColorCSV) return [];
 
     const count = valueKeys.length;
@@ -350,201 +315,184 @@ export const BarChart: React.FC<BarChartProps> = ({
     return values;
   }, [valueKeys.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
 
-  // Color values for column mode (varies by data rows)
-  const columnColorValues = useMemo(() => {
-    // If CSV colors detected, skip color differentiation calculation
-    if (isColorCSV) return [];
-
-    const count = parsedData.length;
-    if (count === 0 || colorMode === 'none') {
-      return Array(count).fill({ opacity: 1, filter: undefined });
-    }
-
-    const values: { opacity: number; filter?: string }[] = [];
-    const incrementDecimal = colorIncrement / 100;
-
-    if (colorMode === 'hue-rotate') {
-      for (let i = 0; i < count; i++) {
-        const degrees = i * colorIncrement;
-        const finalDegrees = colorDirection === 'last-to-first' ? -degrees : degrees;
-        values.push({ opacity: 1, filter: `hue-rotate(${finalDegrees}deg)` });
-      }
-    } else {
-      const rawValues: number[] = [];
-      let currentValue = 100;
-      for (let i = 0; i < count; i++) {
-        rawValues.push(currentValue);
-        if (colorMode === 'brightness') {
-          // Brightness: compound increase (getting brighter)
-          currentValue = currentValue * (1 + incrementDecimal);
-        } else {
-          // Opacity, contrast, saturation: compound reduction
-          currentValue = currentValue * (1 - incrementDecimal);
-        }
-      }
-      if (colorDirection === 'last-to-first') {
-        rawValues.reverse();
-      }
-      for (const value of rawValues) {
-        if (colorMode === 'opacity') {
-          values.push({ opacity: value / 100, filter: undefined });
-        } else if (colorMode === 'saturation') {
-          // Saturation uses decimal format
-          values.push({ opacity: 1, filter: `saturate(${(value / 100).toFixed(4)})` });
-        } else {
-          // brightness, contrast use percentage
-          values.push({ opacity: 1, filter: `${colorMode}(${value}%)` });
-        }
-      }
-    }
-    return values;
-  }, [parsedData.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
-
   // Parse maxValue — Webflow may pass unset Number props as empty strings
   const parsedMaxValue = maxValue != null && String(maxValue) !== '' ? Number(maxValue) : undefined;
 
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
     return (
-      <div className="bar-chart-error">
+      <div className="line-chart-error">
         <p>No data available. Please provide valid JSON data.</p>
       </div>
     );
   }
 
-  return (
-    <div id={id} style={{ width: '100%', height }} className="bar-chart-container">
-      <ResponsiveContainer>
-        <RechartsBarChart
-          data={parsedData}
-          margin={{
-            top: 0,
-            right: 0,
-            left: 0,
-            bottom: xAxisLabel ? 20 : 0,
-          }}
-          style={{
-            fontFamily: 'inherit',
-          }}
-        >
-        {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} stroke={gridColor} />}
-        <XAxis
-          dataKey={xAxisKey}
-          stroke={axisLineColor}
-          tick={showXAxis ? wrappingXAxisTickElement : false}
-          interval={0}
-          height={showXAxis ? 60 : 30}
-          style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
-          {...(xAxisLabel ? { label: { value: xAxisLabel, position: 'bottom', offset: -5, style: { textAnchor: 'middle', fill: 'inherit', fontSize: 12, fontFamily: 'inherit' } } } : {})}
-        />
-        <YAxis
-          width={yAxisWidth}
-          stroke={axisLineColor}
-          style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
-          tickFormatter={formatValue}
-          tick={showYAxis}
-          {...(parsedMaxValue != null && !isNaN(parsedMaxValue) ? { domain: [0, parsedMaxValue] } : {})}
-        >
-          {yAxisLabel && <Label value={yAxisLabel} angle={-90} position="insideLeft" offset={16} textAnchor="middle" style={{ fill: 'inherit', fontSize: 12, fontFamily: 'inherit' }} />}
-        </YAxis>
-        {showTooltip && (
-          <Tooltip
-            cursor={{ fill: 'rgba(0,0,0,0.1)' }}
-            content={
-              <CustomTooltip
-                formatValue={formatValue}
-                backgroundColor={tooltipBackgroundColor}
-                borderRadius={tooltipBorderRadius}
-                titleFontSize={tooltipTitleFontSize}
-                valueFontSize={tooltipValueFontSize}
-                showSeriesName={tooltipShowSeriesName}
-                titleFontWeight={tooltipTitleFontWeight}
-                valueFontWeight={tooltipValueFontWeight}
-                titleFontFamily={tooltipTitleFontFamily}
-                valueFontFamily={tooltipValueFontFamily}
-              />
-            }
-          />
-        )}
-        {showLegend && <Legend content={<CustomLegend />} wrapperStyle={{ margin: 0, padding: 0 }} />}
+  // Render Line or Area series based on chart type
+  const renderSeries = () => {
+    return valueKeys.map((key, keyIndex) => {
+      // If CSV colors, use them directly; otherwise use baseColor
+      const color = isColorCSV && colorArray
+        ? colorArray[keyIndex % colorArray.length]
+        : baseColor;
 
-        {chartType === 'stacked' ? (
-          // Stacked mode: render a Bar for each value key
-          // Color varies by value key (stacked segment)
-          valueKeys.map((key, keyIndex) => {
-            // If CSV colors, use them directly
-            if (isColorCSV && colorArray) {
-              return (
-                <Bar
-                  key={key}
-                  dataKey={key}
-                  stackId="stack"
-                  fill={colorArray[keyIndex % colorArray.length]}
-                  activeBar={{
-                    filter: 'brightness(0.97)',
-                  }}
-                  radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
-                  isAnimationActive={enableAnimation}
-                />
-              );
-            }
-            // Otherwise use color differentiation system
-            const colorValue = stackedColorValues[keyIndex] || { opacity: 1, filter: undefined };
-            return (
-              <Bar
-                key={key}
-                dataKey={key}
-                stackId="stack"
-                fill={baseColor}
-                fillOpacity={colorValue.opacity}
-                style={colorValue.filter ? { filter: colorValue.filter } : undefined}
-                activeBar={{
-                  filter: 'brightness(0.97)',
-                }}
-                radius={keyIndex === valueKeys.length - 1 ? [barRadius, barRadius, 0, 0] : [0, 0, 0, 0]}
-                isAnimationActive={enableAnimation}
-              />
-            );
-          })
-        ) : (
-          // Column mode: render a Bar for each value key (grouped, not stacked)
-          // Color varies by X-axis position (data row), not by value key
-          valueKeys.map((key) => (
-            <Bar
-              key={key}
-              dataKey={key}
-              activeBar={{
-                filter: 'brightness(0.97)',
-              }}
-              radius={[barRadius, barRadius, 0, 0]}
-              isAnimationActive={enableAnimation}
+      const colorValue = isColorCSV
+        ? { opacity: 1, filter: undefined as string | undefined }
+        : (lineColorValues[keyIndex] || { opacity: 1, filter: undefined as string | undefined });
+
+      const dotProps = showDots
+        ? {
+            r: dotSize,
+            fill: color,
+            stroke: '#fff',
+            strokeWidth: 2,
+            fillOpacity: colorValue.opacity,
+            ...(colorValue.filter ? { style: { filter: colorValue.filter } } : {}),
+          }
+        : false;
+
+      if (chartType === 'area') {
+        return (
+          <Area
+            key={key}
+            type="monotone"
+            dataKey={key}
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeOpacity={colorValue.opacity}
+            fill={color}
+            fillOpacity={0.15}
+            dot={dotProps}
+            isAnimationActive={enableAnimation}
+            style={colorValue.filter ? { filter: colorValue.filter } : undefined}
+          />
+        );
+      }
+
+      return (
+        <Line
+          key={key}
+          type="monotone"
+          dataKey={key}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeOpacity={colorValue.opacity}
+          dot={dotProps}
+          isAnimationActive={enableAnimation}
+          style={colorValue.filter ? { filter: colorValue.filter } : undefined}
+        />
+      );
+    });
+  };
+
+  return (
+    <div id={id} style={{ width: '100%', height }} className="line-chart-container">
+      <ResponsiveContainer>
+        {chartType === 'area' ? (
+          <RechartsAreaChart
+            data={parsedData}
+            margin={{
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: xAxisLabel ? 20 : 0,
+            }}
+            style={{
+              fontFamily: 'inherit',
+            }}
+          >
+            {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} stroke={gridColor} />}
+            <XAxis
+              dataKey={xAxisKey}
+              stroke={axisLineColor}
+              tick={showXAxis}
+              style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
+              {...(xAxisLabel ? { label: { value: xAxisLabel, position: 'bottom', offset: -5, style: { textAnchor: 'middle', fill: 'inherit', fontSize: 12, fontFamily: 'inherit' } } } : {})}
+            />
+            <YAxis
+              width={yAxisWidth}
+              stroke={axisLineColor}
+              style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
+              tickFormatter={formatValue}
+              tick={showYAxis}
+              {...(parsedMaxValue != null && !isNaN(parsedMaxValue) ? { domain: [0, parsedMaxValue] } : {})}
             >
-              {parsedData.map((entry, index) => {
-                // If CSV colors, use them directly
-                if (isColorCSV && colorArray) {
-                  return (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={colorArray[index % colorArray.length]}
-                    />
-                  );
-                }
-                // Otherwise use color differentiation system
-                const colorValue = columnColorValues[index] || { opacity: 1, filter: undefined };
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={baseColor}
-                    fillOpacity={colorValue.opacity}
-                    style={colorValue.filter ? { filter: colorValue.filter } : undefined}
+              {yAxisLabel && <Label value={yAxisLabel} angle={-90} position="insideLeft" offset={16} textAnchor="middle" style={{ fill: 'inherit', fontSize: 12, fontFamily: 'inherit' }} />}
+            </YAxis>
+            {showTooltip && (
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    formatValue={formatValue}
+                    backgroundColor={tooltipBackgroundColor}
+                    borderRadius={tooltipBorderRadius}
+                    titleFontSize={tooltipTitleFontSize}
+                    valueFontSize={tooltipValueFontSize}
+                    showSeriesName={tooltipShowSeriesName}
+                    titleFontWeight={tooltipTitleFontWeight}
+                    valueFontWeight={tooltipValueFontWeight}
+                    titleFontFamily={tooltipTitleFontFamily}
+                    valueFontFamily={tooltipValueFontFamily}
                   />
-                );
-              })}
-            </Bar>
-          ))
+                }
+              />
+            )}
+            {showLegend && <Legend content={<CustomLegend />} wrapperStyle={{ margin: 0, padding: 0 }} />}
+            {renderSeries()}
+          </RechartsAreaChart>
+        ) : (
+          <RechartsLineChart
+            data={parsedData}
+            margin={{
+              top: 0,
+              right: 0,
+              left: 0,
+              bottom: xAxisLabel ? 20 : 0,
+            }}
+            style={{
+              fontFamily: 'inherit',
+            }}
+          >
+            {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} stroke={gridColor} />}
+            <XAxis
+              dataKey={xAxisKey}
+              stroke={axisLineColor}
+              tick={showXAxis}
+              style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
+              {...(xAxisLabel ? { label: { value: xAxisLabel, position: 'bottom', offset: -5, style: { textAnchor: 'middle', fill: 'inherit', fontSize: 12, fontFamily: 'inherit' } } } : {})}
+            />
+            <YAxis
+              width={yAxisWidth}
+              stroke={axisLineColor}
+              style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
+              tickFormatter={formatValue}
+              tick={showYAxis}
+              {...(parsedMaxValue != null && !isNaN(parsedMaxValue) ? { domain: [0, parsedMaxValue] } : {})}
+            >
+              {yAxisLabel && <Label value={yAxisLabel} angle={-90} position="insideLeft" offset={16} textAnchor="middle" style={{ fill: 'inherit', fontSize: 12, fontFamily: 'inherit' }} />}
+            </YAxis>
+            {showTooltip && (
+              <Tooltip
+                content={
+                  <CustomTooltip
+                    formatValue={formatValue}
+                    backgroundColor={tooltipBackgroundColor}
+                    borderRadius={tooltipBorderRadius}
+                    titleFontSize={tooltipTitleFontSize}
+                    valueFontSize={tooltipValueFontSize}
+                    showSeriesName={tooltipShowSeriesName}
+                    titleFontWeight={tooltipTitleFontWeight}
+                    valueFontWeight={tooltipValueFontWeight}
+                    titleFontFamily={tooltipTitleFontFamily}
+                    valueFontFamily={tooltipValueFontFamily}
+                  />
+                }
+              />
+            )}
+            {showLegend && <Legend content={<CustomLegend />} wrapperStyle={{ margin: 0, padding: 0 }} />}
+            {renderSeries()}
+          </RechartsLineChart>
         )}
-      </RechartsBarChart>
-    </ResponsiveContainer>
+      </ResponsiveContainer>
     </div>
   );
 };

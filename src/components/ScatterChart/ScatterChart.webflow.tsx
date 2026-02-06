@@ -1,21 +1,24 @@
 import { declareComponent } from '@webflow/react';
 import { props } from '@webflow/data-types';
-import { BarChart } from './BarChart';
-import './BarChart.css';
+import { ScatterChart } from './ScatterChart';
+import './ScatterChart.css';
 
 const defaultData = JSON.stringify(
   [
-    { name: 'Q1', revenue: 100, costs: 40, profit: 60 },
-    { name: 'Q2', revenue: 120, costs: 45, profit: 75 },
-    { name: 'Q3', revenue: 140, costs: 50, profit: 90 },
+    { x: 10, y: 120, category: 'Product A' },
+    { x: 20, y: 180, category: 'Product A' },
+    { x: 30, y: 150, category: 'Product A' },
+    { x: 15, y: 90, category: 'Product B' },
+    { x: 25, y: 140, category: 'Product B' },
+    { x: 35, y: 110, category: 'Product B' },
   ],
   null,
   2
 );
 
-export default declareComponent(BarChart, {
-  name: 'Bar Chart',
-  description: 'Smart bar chart with auto-detection - displays column or stacked bars with automatic color variation',
+export default declareComponent(ScatterChart, {
+  name: 'Scatter Chart',
+  description: 'Interactive scatter/bubble chart with auto-detection — plots X/Y coordinates with multiple series support and customizable point styling',
   group: 'Charts',
 
   props: {
@@ -24,22 +27,40 @@ export default declareComponent(BarChart, {
       name: 'Chart Data (JSON)',
       defaultValue: defaultData,
       group: 'Data',
-      tooltip: 'Auto-detects numeric values. Single value = column chart, multiple values = stackable chart.',
+      tooltip: 'Array of objects with X and Y coordinates. Optional: add a category property to create multiple series.',
     }),
     xAxisKey: props.Text({
       name: 'X-Axis Key',
-      defaultValue: 'name',
+      defaultValue: 'x',
       group: 'Data',
-      tooltip: 'The property name in your data for X-axis labels',
+      tooltip: 'The property name in your data for X-axis values',
+    }),
+    yAxisKey: props.Text({
+      name: 'Y-Axis Key',
+      defaultValue: 'y',
+      group: 'Data',
+      tooltip: 'The property name in your data for Y-axis values',
+    }),
+    categoryKey: props.Text({
+      name: 'Category Key (Optional)',
+      defaultValue: '',
+      group: 'Data',
+      tooltip: 'Property name to group data into multiple series. Leave empty for single series.',
     }),
 
     // Chart Configuration
     chartType: props.Variant({
       name: 'Chart Type',
-      defaultValue: 'column',
+      defaultValue: 'scatter',
       group: 'Chart Configuration',
-      options: ['column', 'stacked'],
-      tooltip: 'Column: groups bars side-by-side (opacity varies left to right). Stacked: stacks bars vertically (opacity varies bottom to top, top=boldest).',
+      options: ['scatter', 'bubble'],
+      tooltip: 'Scatter: fixed point size. Bubble: point size varies based on Z-axis key.',
+    }),
+    sizeKey: props.Text({
+      name: 'Size Key (Bubble)',
+      defaultValue: 'z',
+      group: 'Chart Configuration',
+      tooltip: 'For bubble chart: which data property controls bubble size. Ignored in scatter mode.',
     }),
 
     // Color Configuration
@@ -47,20 +68,20 @@ export default declareComponent(BarChart, {
       name: 'Base Color',
       defaultValue: '#00a0dc',
       group: 'Color',
-      tooltip: 'Base color for all bars. OR provide comma-separated hex codes (e.g., #00a0dc,#82ca9d,#ffc658) to override color mode and use direct colors. Colors darken by 3% on hover.',
+      tooltip: 'Base color for all points. OR provide comma-separated hex codes (e.g., #00a0dc,#82ca9d,#ffc658) to assign direct colors to each series.',
     }),
     colorMode: props.Variant({
       name: 'Color Mode',
       defaultValue: 'opacity',
       group: 'Color',
       options: ['opacity', 'brightness', 'contrast', 'saturation', 'hue-rotate', 'none'],
-      tooltip: 'How to differentiate bars: opacity (transparency), brightness (lightness), contrast, saturation (color intensity), hue-rotate (color shift), or none (all same). Ignored if Base Color contains CSV.',
+      tooltip: 'How to differentiate series: opacity, brightness, contrast, saturation, hue-rotate, or none. Ignored if Base Color contains CSV.',
     }),
     colorIncrement: props.Number({
       name: 'Color Increment',
       defaultValue: 25,
       group: 'Color',
-      tooltip: 'For opacity/contrast/saturation: relative % reduction per bar (compound). For brightness: relative % increase per bar (compound). For hue-rotate: degrees to rotate per bar (additive). Higher values = more contrast between bars. Ignored if Base Color contains CSV.',
+      tooltip: 'For opacity/contrast/saturation: relative % reduction per series. For brightness: % increase. For hue-rotate: degrees. Ignored if Base Color contains CSV.',
       min: 0,
       max: 100,
       decimals: 0,
@@ -70,7 +91,25 @@ export default declareComponent(BarChart, {
       defaultValue: 'first-to-last',
       group: 'Color',
       options: ['first-to-last', 'last-to-first'],
-      tooltip: 'Column mode: First to Last = base at left, Last to First = base at right. Stacked mode: First to Last = base at bottom, Last to First = base at top. Ignored if Base Color contains CSV.',
+      tooltip: 'First to Last: base color on first series. Last to First: base color on last series. Ignored if Base Color contains CSV.',
+    }),
+
+    // Point Styling
+    pointSize: props.Number({
+      name: 'Point Size',
+      defaultValue: 60,
+      group: 'Point Styling',
+      tooltip: 'Base size of points. For bubble chart, this is the median size (actual size varies by Z value).',
+      min: 10,
+      max: 200,
+      decimals: 0,
+    }),
+    pointShape: props.Variant({
+      name: 'Point Shape',
+      defaultValue: 'circle',
+      group: 'Point Styling',
+      options: ['circle', 'square', 'triangle', 'diamond'],
+      tooltip: 'Shape of the scatter points',
     }),
 
     // Chart Features
@@ -100,7 +139,7 @@ export default declareComponent(BarChart, {
       name: 'Show Legend',
       defaultValue: true,
       group: 'Chart Features',
-      tooltip: 'Display legend showing all value keys',
+      tooltip: 'Display legend showing all series names',
     }),
     enableAnimation: props.Boolean({
       name: 'Enable Animation',
@@ -133,32 +172,38 @@ export default declareComponent(BarChart, {
       defaultValue: 'number',
       group: 'Value Formatting',
       options: ['number', 'percent', 'currency', 'multiplier'],
-      tooltip: 'Format values as numbers (with K/M suffix), percentages (%), currency (with symbol and K/M suffix), or multiplier (with x suffix)',
+      tooltip: 'Format values as numbers (with K/M suffix), percentages, currency, or multiplier',
     }),
     currencySymbol: props.Text({
       name: 'Currency Symbol',
       defaultValue: '£',
       group: 'Value Formatting',
-      tooltip: 'Currency symbol to use when Value Format is set to "currency" (e.g., "£", "$", "€")',
-    }),
-
-    // Bar Styling
-    barRadius: props.Number({
-      name: 'Bar Corner Radius',
-      defaultValue: 10,
-      group: 'Bar Styling',
-      tooltip: 'Border radius for the top corners of bars (in pixels)',
-      min: 0,
-      max: 50,
-      decimals: 0,
+      tooltip: 'Currency symbol to use when Value Format is set to "currency"',
     }),
 
     // Axis Configuration
-    maxValue: props.Number({
-      name: 'Max Value',
+    minXValue: props.Number({
+      name: 'Min X Value',
       group: 'Chart Features',
-      tooltip: 'Set a fixed maximum value for the Y-axis. Leave empty to auto-scale based on data.',
-      min: 0,
+      tooltip: 'Set minimum X-axis value. Leave empty to auto-scale.',
+      decimals: 0,
+    }),
+    maxXValue: props.Number({
+      name: 'Max X Value',
+      group: 'Chart Features',
+      tooltip: 'Set maximum X-axis value. Leave empty to auto-scale.',
+      decimals: 0,
+    }),
+    minYValue: props.Number({
+      name: 'Min Y Value',
+      group: 'Chart Features',
+      tooltip: 'Set minimum Y-axis value. Leave empty to auto-scale.',
+      decimals: 0,
+    }),
+    maxYValue: props.Number({
+      name: 'Max Y Value',
+      group: 'Chart Features',
+      tooltip: 'Set maximum Y-axis value. Leave empty to auto-scale.',
       decimals: 0,
     }),
 
@@ -278,6 +323,6 @@ export default declareComponent(BarChart, {
   },
 
   options: {
-    ssr: false, // Disable SSR as Recharts uses browser-specific rendering
+    ssr: false,
   },
 });

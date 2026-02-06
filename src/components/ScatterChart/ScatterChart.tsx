@@ -1,23 +1,27 @@
 import React, { useMemo } from 'react';
 import {
-  BarChart,
-  Bar,
+  ScatterChart as RechartsScatterChart,
+  Scatter,
   XAxis,
   YAxis,
-  ResponsiveContainer,
-  LabelList,
+  ZAxis,
   CartesianGrid,
-  Cell,
   Tooltip,
-  ReferenceLine,
+  Legend,
+  ResponsiveContainer,
   Label,
 } from 'recharts';
 
-export interface HorizontalBarChartProps {
+export interface ScatterChartProps {
   // Data
   data: string;
-  labelKey?: string;
-  valueKey?: string;
+  xAxisKey?: string;
+  yAxisKey?: string;
+  categoryKey?: string; // Optional - group data into multiple series by this key
+
+  // Chart Configuration
+  chartType?: string; // "scatter" | "bubble"
+  sizeKey?: string; // For bubble chart - which key controls bubble size
 
   // Color
   baseColor?: string;
@@ -25,36 +29,44 @@ export interface HorizontalBarChartProps {
   colorIncrement?: number;
   colorDirection?: string; // "first-to-last" | "last-to-first"
 
+  // Point Styling
+  pointSize?: number;
+  pointShape?: string; // "circle" | "square" | "triangle" | "diamond"
+
   // Chart Features
-  showGrid?: boolean;
+  showCartesianGrid?: boolean;
   showXAxis?: boolean;
   showYAxis?: boolean;
-  showLabels?: boolean;
   showTooltip?: boolean;
+  showLegend?: boolean;
   enableAnimation?: boolean;
-  gridStrokeColor?: string;
 
   // Value Formatting
   valueFormat?: string; // "number" | "percent" | "currency" | "multiplier"
   currencySymbol?: string;
 
+  // Grid Styling
+  gridStrokeDasharray?: string;
+
   // Axis Configuration
-  minValue?: number;
-  maxValue?: number;
+  minXValue?: number;
+  maxXValue?: number;
+  minYValue?: number;
+  maxYValue?: number;
 
   // Dimensions
   height?: number;
-  barCategoryGap?: number;
 
-  // Bar Styling
-  barRadius?: number;
-
-  // Axis Styling
+  // Axis width
   yAxisWidth?: number;
 
   // Axis Labels
   xAxisLabel?: string;
   yAxisLabel?: string;
+
+  // Axis & Grid Styling
+  axisLineColor?: string;
+  gridColor?: string;
 
   // Tooltip Styling
   tooltipBackgroundColor?: string;
@@ -153,31 +165,38 @@ const CustomLegend = ({ payload }: CustomLegendProps) => {
   );
 };
 
-export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
+export const ScatterChart: React.FC<ScatterChartProps> = ({
   data,
-  labelKey = 'label',
-  valueKey = 'value',
-  baseColor = '#ff007a',
+  xAxisKey = 'x',
+  yAxisKey = 'y',
+  categoryKey = '',
+  chartType = 'scatter',
+  sizeKey = 'z',
+  baseColor = '#00a0dc',
   colorMode = 'opacity',
   colorIncrement = 25,
   colorDirection = 'first-to-last',
-  showGrid = true,
+  pointSize = 60,
+  pointShape = 'circle',
+  showCartesianGrid = true,
   showXAxis = true,
   showYAxis = true,
-  showLabels = true,
   showTooltip = true,
+  showLegend = true,
   enableAnimation = true,
-  gridStrokeColor = '#e6e6e6',
   valueFormat = 'number',
   currencySymbol = '£',
-  minValue,
-  maxValue,
-  height = 160,
-  barCategoryGap = 4,
-  barRadius = 8,
-  yAxisWidth = 50,
+  gridStrokeDasharray = '3 3',
+  minXValue,
+  maxXValue,
+  minYValue,
+  maxYValue,
+  height = 400,
+  yAxisWidth = 60,
   xAxisLabel = '',
   yAxisLabel = '',
+  axisLineColor = '#666',
+  gridColor = '#ccc',
   tooltipBackgroundColor = '#ffffff',
   tooltipBorderRadius = 8,
   tooltipTitleFontSize = 14,
@@ -189,6 +208,32 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
   tooltipValueFontFamily = 'inherit',
   id,
 }) => {
+  // Format value based on format type
+  const formatValue = (value: number): string => {
+    const numValue = Number(value);
+    const absValue = Math.abs(numValue);
+
+    if (valueFormat === 'percent') {
+      return `${numValue}%`;
+    } else if (valueFormat === 'currency') {
+      if (absValue >= 1000000) {
+        return `${currencySymbol}${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${currencySymbol}${(numValue / 1000).toFixed(1)}K`;
+      }
+      return `${currencySymbol}${numValue}`;
+    } else if (valueFormat === 'multiplier') {
+      return `${numValue}x`;
+    } else {
+      if (absValue >= 1000000) {
+        return `${(numValue / 1000000).toFixed(1)}M`;
+      } else if (absValue >= 1000) {
+        return `${(numValue / 1000).toFixed(1)}K`;
+      }
+      return numValue.toString();
+    }
+  };
+
   // Parse JSON data
   const parsedData = useMemo(() => {
     try {
@@ -203,6 +248,52 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
     }
   }, [data]);
 
+  // Group data by category if categoryKey is provided, otherwise single series
+  const seriesData = useMemo(() => {
+    if (parsedData.length === 0) return [];
+
+    if (categoryKey && categoryKey !== '') {
+      // Multiple series - group by category
+      const grouped: { [key: string]: any[] } = {};
+
+      parsedData.forEach(item => {
+        const category = String(item[categoryKey] || 'default');
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+
+        const point: any = {
+          x: Number(item[xAxisKey]),
+          y: Number(item[yAxisKey]),
+        };
+
+        if (chartType === 'bubble' && item[sizeKey] !== undefined) {
+          point.z = Number(item[sizeKey]);
+        }
+
+        grouped[category].push(point);
+      });
+
+      return Object.entries(grouped).map(([name, data]) => ({ name, data }));
+    } else {
+      // Single series
+      const data = parsedData.map(item => {
+        const point: any = {
+          x: Number(item[xAxisKey]),
+          y: Number(item[yAxisKey]),
+        };
+
+        if (chartType === 'bubble' && item[sizeKey] !== undefined) {
+          point.z = Number(item[sizeKey]);
+        }
+
+        return point;
+      });
+
+      return [{ name: yAxisKey, data }];
+    }
+  }, [parsedData, xAxisKey, yAxisKey, categoryKey, sizeKey, chartType]);
+
   // Detect if baseColor contains CSV (comma-separated values)
   const isColorCSV = useMemo(() => {
     return baseColor.includes(',');
@@ -216,221 +307,119 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
     return null;
   }, [baseColor, isColorCSV]);
 
-  // Calculate color differentiation values for each bar (used when NOT CSV)
-  const colorValues = useMemo(() => {
-    // If CSV colors detected, skip color differentiation calculation
+  // Color values per series
+  const seriesColorValues = useMemo(() => {
     if (isColorCSV) return [];
 
-    const count = parsedData.length;
+    const count = seriesData.length;
     if (count === 0 || colorMode === 'none') {
-      return parsedData.map(() => ({ opacity: 1, filter: undefined }));
+      return Array(count).fill({ opacity: 1, filter: undefined });
     }
 
     const values: { opacity: number; filter?: string }[] = [];
     const incrementDecimal = colorIncrement / 100;
 
-    // Generate values based on mode
     if (colorMode === 'hue-rotate') {
-      // Hue-rotate uses additive logic (degrees)
       for (let i = 0; i < count; i++) {
         const degrees = i * colorIncrement;
         const finalDegrees = colorDirection === 'last-to-first' ? -degrees : degrees;
-        values.push({
-          opacity: 1,
-          filter: `hue-rotate(${finalDegrees}deg)`,
-        });
+        values.push({ opacity: 1, filter: `hue-rotate(${finalDegrees}deg)` });
       }
     } else {
-      // Opacity, contrast, saturation use compound reduction
-      // Brightness uses compound increase (getting brighter)
       const rawValues: number[] = [];
       let currentValue = 100;
-
       for (let i = 0; i < count; i++) {
         rawValues.push(currentValue);
         if (colorMode === 'brightness') {
-          // Brightness: compound increase (multiply by 1 + increment)
           currentValue = currentValue * (1 + incrementDecimal);
         } else {
-          // Opacity, contrast, saturation: compound reduction (multiply by 1 - increment)
           currentValue = currentValue * (1 - incrementDecimal);
         }
       }
-
-      // Reverse if last-to-first
       if (colorDirection === 'last-to-first') {
         rawValues.reverse();
       }
-
-      // Convert to appropriate format
       for (const value of rawValues) {
         if (colorMode === 'opacity') {
           values.push({ opacity: value / 100, filter: undefined });
         } else if (colorMode === 'saturation') {
-          // Saturation uses decimal format
-          values.push({
-            opacity: 1,
-            filter: `saturate(${(value / 100).toFixed(4)})`,
-          });
+          values.push({ opacity: 1, filter: `saturate(${(value / 100).toFixed(4)})` });
         } else {
-          // brightness, contrast use percentage
-          values.push({
-            opacity: 1,
-            filter: `${colorMode}(${value}%)`,
-          });
+          values.push({ opacity: 1, filter: `${colorMode}(${value}%)` });
         }
       }
     }
-
     return values;
-  }, [parsedData, colorMode, colorIncrement, colorDirection, isColorCSV]);
+  }, [seriesData.length, colorMode, colorIncrement, colorDirection, isColorCSV]);
 
-  // Calculate domain (min/max) for X-axis
-  const calculatedDomain = useMemo(() => {
-    if (parsedData.length === 0) return [0, 20];
+  // Parse domain values
+  const parsedMinX = minXValue != null && String(minXValue) !== '' ? Number(minXValue) : undefined;
+  const parsedMaxX = maxXValue != null && String(maxXValue) !== '' ? Number(maxXValue) : undefined;
+  const parsedMinY = minYValue != null && String(minYValue) !== '' ? Number(minYValue) : undefined;
+  const parsedMaxY = maxYValue != null && String(maxYValue) !== '' ? Number(maxYValue) : undefined;
 
-    // Get all values from data
-    const values = parsedData.map(item => Number(item[valueKey]) || 0);
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
-
-    // Determine final min/max
-    let min: number;
-    let max: number;
-
-    // Handle min value
-    if (minValue !== undefined && minValue !== null) {
-      min = Number(minValue);
-    } else {
-      // Auto-calculate min with padding
-      min = dataMin;
-      if (dataMin < 0) {
-        min = dataMin * 1.1; // Add 10% padding for negative
-      } else {
-        min = Math.min(0, dataMin); // Include 0 for positive values
-      }
-    }
-
-    // Handle max value
-    if (maxValue !== undefined && maxValue !== null) {
-      max = Number(maxValue);
-    } else {
-      // Auto-calculate max with padding
-      max = dataMax;
-      if (dataMax > 0) {
-        max = dataMax * 1.1; // Add 10% padding for positive
-      } else {
-        max = Math.max(0, dataMax); // Include 0 for negative values
-      }
-    }
-
-    // For negative-only charts, flip domain so 0 is on left, negative values on right
-    if (max <= 0 && min < 0) {
-      return [max, min]; // Flipped: [0, -50] instead of [-50, 0]
-    }
-
-    return [min, max];
-  }, [parsedData, valueKey, minValue, maxValue]);
-
-  // Check if we need to show a reference line at 0
-  const showZeroLine = useMemo(() => {
-    const [min, max] = calculatedDomain;
-    return min < 0 && max > 0;
-  }, [calculatedDomain]);
+  // Map shape names to Recharts shape types
+  const getShapeName = (shape: string) => {
+    const shapeMap: { [key: string]: string } = {
+      circle: 'circle',
+      square: 'square',
+      triangle: 'triangle',
+      diamond: 'diamond',
+    };
+    return shapeMap[shape] || 'circle';
+  };
 
   // Check if we have valid data
   if (!parsedData || parsedData.length === 0) {
     return (
-      <div className="horizontal-bar-chart-error">
+      <div className="scatter-chart-error">
         <p>No data available. Please provide valid JSON data.</p>
       </div>
     );
   }
 
-  const formatValue = (value: any) => {
-    if (value === null || value === undefined) return '';
-
-    const numValue = Number(value);
-    const absValue = Math.abs(numValue);
-
-    if (valueFormat === 'percent') {
-      // Percentage format - no K/M suffix
-      return `${numValue}%`;
-    } else if (valueFormat === 'currency') {
-      // Currency format with K/M suffix
-      if (absValue >= 1000000) {
-        return `${currencySymbol}${(numValue / 1000000).toFixed(1)}M`;
-      } else if (absValue >= 1000) {
-        return `${currencySymbol}${(numValue / 1000).toFixed(1)}K`;
-      }
-      return `${currencySymbol}${numValue}`;
-    } else if (valueFormat === 'multiplier') {
-      // Multiplier format - adds 'x' suffix, no K/M
-      return `${numValue}x`;
-    } else {
-      // Number format with K/M suffix
-      if (absValue >= 1000000) {
-        return `${(numValue / 1000000).toFixed(1)}M`;
-      } else if (absValue >= 1000) {
-        return `${(numValue / 1000).toFixed(1)}K`;
-      }
-      return numValue.toString();
-    }
-  };
-
   return (
-    <div id={id} style={{ width: '100%', height }} className="horizontal-bar-chart-container">
+    <div id={id} style={{ width: '100%', height }} className="scatter-chart-container">
       <ResponsiveContainer>
-        <BarChart
-          data={parsedData}
-          layout="vertical"
+        <RechartsScatterChart
           margin={{
-            top: xAxisLabel ? 20 : 0,
+            top: 0,
             right: 0,
-            bottom: 0,
             left: 0,
+            bottom: xAxisLabel ? 20 : 0,
           }}
-          barCategoryGap={barCategoryGap}
-          style={{ fontFamily: 'inherit' }}
+          style={{
+            fontFamily: 'inherit',
+          }}
         >
-          {showGrid && <CartesianGrid horizontal={false} stroke={gridStrokeColor} />}
-
+          {showCartesianGrid && <CartesianGrid strokeDasharray={gridStrokeDasharray} stroke={gridColor} />}
           <XAxis
             type="number"
-            orientation="top"
-            domain={calculatedDomain}
-            tickFormatter={formatValue}
-            axisLine={false}
-            tickLine={false}
+            dataKey="x"
+            stroke={axisLineColor}
             tick={showXAxis}
             style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
-            {...(xAxisLabel ? { label: { value: xAxisLabel, position: 'top', offset: 10, style: { textAnchor: 'middle', fill: 'inherit', fontSize: 12, fontFamily: 'inherit' } } } : {})}
+            tickFormatter={formatValue}
+            {...(parsedMinX != null || parsedMaxX != null ? { domain: [parsedMinX ?? 'auto', parsedMaxX ?? 'auto'] } : {})}
+            {...(xAxisLabel ? { label: { value: xAxisLabel, position: 'bottom', offset: -5, style: { textAnchor: 'middle', fill: 'inherit', fontSize: 12, fontFamily: 'inherit' } } } : {})}
           />
-
-          {showZeroLine && (
-            <ReferenceLine
-              x={0}
-              stroke="#000000"
-              strokeWidth={1.5}
-              strokeOpacity={0.3}
-            />
-          )}
-
           <YAxis
-            type="category"
-            dataKey={labelKey}
-            axisLine={false}
-            tickLine={false}
+            type="number"
+            dataKey="y"
             width={yAxisWidth}
+            stroke={axisLineColor}
             style={{ fontFamily: 'inherit', fontSize: 12, fill: 'inherit' }}
+            tickFormatter={formatValue}
             tick={showYAxis}
+            {...(parsedMinY != null || parsedMaxY != null ? { domain: [parsedMinY ?? 'auto', parsedMaxY ?? 'auto'] } : {})}
           >
             {yAxisLabel && <Label value={yAxisLabel} angle={-90} position="insideLeft" offset={16} textAnchor="middle" style={{ fill: 'inherit', fontSize: 12, fontFamily: 'inherit' }} />}
           </YAxis>
-
+          {chartType === 'bubble' && (
+            <ZAxis type="number" dataKey={sizeKey} range={[pointSize / 2, pointSize * 2]} />
+          )}
           {showTooltip && (
             <Tooltip
-              cursor={{ fill: 'rgba(0,0,0,0.1)' }}
               content={
                 <CustomTooltip
                   formatValue={formatValue}
@@ -447,46 +436,31 @@ export const HorizontalBarChart: React.FC<HorizontalBarChartProps> = ({
               }
             />
           )}
+          {showLegend && <Legend content={<CustomLegend />} wrapperStyle={{ margin: 0, padding: 0 }} />}
 
-          <Bar
-            dataKey={valueKey}
-            radius={[0, barRadius, barRadius, 0]}
-            isAnimationActive={enableAnimation}
-            activeBar={{
-              filter: 'brightness(0.97)',
-            }}
-          >
-            {showLabels && (
-              <LabelList
-                dataKey={valueKey}
-                position="right"
-                formatter={formatValue}
-                style={{ fill: 'inherit', fontWeight: 600, fontFamily: 'inherit', fontSize: 14 }}
+          {seriesData.map((series, seriesIndex) => {
+            const color = isColorCSV && colorArray
+              ? colorArray[seriesIndex % colorArray.length]
+              : baseColor;
+
+            const colorValue = isColorCSV
+              ? { opacity: 1, filter: undefined as string | undefined }
+              : (seriesColorValues[seriesIndex] || { opacity: 1, filter: undefined as string | undefined });
+
+            return (
+              <Scatter
+                key={series.name}
+                name={series.name}
+                data={series.data}
+                fill={color}
+                fillOpacity={colorValue.opacity}
+                shape={getShapeName(pointShape) as any}
+                isAnimationActive={enableAnimation}
+                style={colorValue.filter ? { filter: colorValue.filter } : undefined}
               />
-            )}
-            {parsedData.map((entry, index) => {
-              // If CSV colors, use them directly
-              if (isColorCSV && colorArray) {
-                return (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={colorArray[index % colorArray.length]}
-                  />
-                );
-              }
-              // Otherwise use color differentiation system
-              const colorValue = colorValues[index];
-              return (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={baseColor}
-                  fillOpacity={colorValue?.opacity ?? 1}
-                  style={colorValue?.filter ? { filter: colorValue.filter } : undefined}
-                />
-              );
-            })}
-          </Bar>
-        </BarChart>
+            );
+          })}
+        </RechartsScatterChart>
       </ResponsiveContainer>
     </div>
   );

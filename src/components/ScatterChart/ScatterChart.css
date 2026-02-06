@@ -1,0 +1,10 @@
+.scatter-chart-container {
+  font-family: inherit;
+  color: inherit;
+}
+
+.scatter-chart-error {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+}
